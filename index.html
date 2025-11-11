@@ -27,7 +27,7 @@
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--accent)}
-    .btn.ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+    .btn.ghost{background:#fff;border-color:var(--line);color:#ink}
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:640px}
     thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line)}
     td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
@@ -54,6 +54,9 @@
     .modal .content{padding:16px}
     .modal .summary{font-size:14px;color:var(--muted);margin-top:4px}
     .modal .list{margin:8px 0 0 0;padding-left:18px}
+    .modal .guard{margin-top:12px}
+    .modal .guard label{font-size:12px;color:#6b7280;display:block;margin-bottom:6px}
+    .modal .guard input{width:100%;padding:10px;border:1px solid var(--line);border-radius:12px}
     .modal footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
     .btn.bad{border-color:var(--warn);background:var(--warn)}
     .btn.good{border-color:var(--ok);background:var(--ok)}
@@ -65,6 +68,10 @@
     .snackbar .timer{width:120px;height:4px;background:#374151;border-radius:999px;overflow:hidden}
     .snackbar .timer > div{height:100%;width:100%;background:#e5e7eb;transform-origin:left;animation:snack 10s linear forwards}
     @keyframes snack { to { transform:scaleX(0); } }
+
+    /* Veszélyzóna */
+    .danger{border:1px solid #fecaca;background:#fff1f2}
+    .danger h2{color:#991b1b}
   </style>
 </head>
 <body>
@@ -321,6 +328,13 @@
           </table>
         </div>
       </div>
+
+      <!-- Veszélyzóna -->
+      <div class="card danger" style="grid-column:1/-1">
+        <h2>Veszélyzóna</h2>
+        <p class="muted">A gomb az <b>összes adatot</b> törli: beszállítók, megrendelők, termékek, mozgások. A művelet nem visszavonható.</p>
+        <button id="wipe-all" class="btn bad" type="button">Teljes adatbázis törlése</button>
+      </div>
     </section>
 
     <footer class="muted" style="text-align:center;margin-top:24px">
@@ -339,6 +353,10 @@
         <div id="modal-message">Biztosan végrehajtod?</div>
         <div class="summary" id="modal-summary"></div>
         <ul class="list" id="modal-list"></ul>
+        <div class="guard hide" id="modal-guard">
+          <label>Írd be pontosan: <b id="guard-text"></b></label>
+          <input id="modal-input" placeholder="Írd be ide…" />
+        </div>
       </div>
       <footer>
         <button id="modal-cancel" class="btn ghost-danger" type="button">Mégse</button>
@@ -380,7 +398,7 @@
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
@@ -408,7 +426,6 @@
 
     const $ = (sel) => document.querySelector(sel);
     const fmt = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 });
-    const nowISO = () => new Date().toISOString().slice(0,19).replace('T',' ');
 
     // Realtime adatok
     onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{ suppliers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderSuppliers(); fillPartners(); });
@@ -434,18 +451,10 @@
     function addLineRow(tbody, type){
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
-          <select class="li-product" required></select>
-        </td>
-        <td>
-          <input class="li-qty" type="number" min="0.01" step="0.01" value="1" required />
-        </td>
-        <td>
-          <input class="li-unit" />
-        </td>
-        <td>
-          <input class="li-note" placeholder="Megjegyzés (opcionális)" />
-        </td>
+        <td><select class="li-product" required></select></td>
+        <td><input class="li-qty" type="number" min="0.01" step="0.01" value="1" required /></td>
+        <td><input class="li-unit" /></td>
+        <td><input class="li-note" placeholder="Megjegyzés (opcionális)" /></td>
         <td class="inline-actions">
           <button type="button" class="btn ghost li-dup">Dupláz</button>
           <button type="button" class="btn secondary li-del">Töröl</button>
@@ -460,15 +469,7 @@
         fillRowProducts(clone.querySelector('.li-product'), clone.querySelector('.li-unit'));
         clone.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
         clone.querySelector('.li-del').addEventListener('click', ()=>{ clone.remove(); updateSum(type); });
-        clone.querySelector('.li-dup').addEventListener('click', ()=>{
-          const c2 = clone.cloneNode(true);
-          tbody.insertBefore(c2, clone.nextSibling);
-          fillRowProducts(c2.querySelector('.li-product'), c2.querySelector('.li-unit'));
-          c2.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
-          c2.querySelector('.li-del').addEventListener('click', ()=>{ c2.remove(); updateSum(type); });
-          c2.querySelector('.li-dup').addEventListener('click', ()=>{/* no-op chain */});
-          updateSum(type);
-        });
+        clone.querySelector('.li-dup').addEventListener('click', ()=>{/* láncolás elhagyva */});
         updateSum(type);
       });
       updateSum(type);
@@ -499,8 +500,11 @@
     const modalMsg = document.getElementById('modal-message');
     const modalSum = document.getElementById('modal-summary');
     const modalList = document.getElementById('modal-list');
+    const modalGuard = document.getElementById('modal-guard');
+    const modalInput = document.getElementById('modal-input');
+    const guardTextEl = document.getElementById('guard-text');
 
-    function openConfirm({ title, message, summary, items }){
+    function openConfirm({ title, message, summary, items, requireText }){
       const titleEl = document.getElementById('modal-title');
       titleEl.textContent = title || 'Művelet megerősítése';
       modalMsg.textContent = message || '';
@@ -510,16 +514,36 @@
         const li=document.createElement('li'); li.textContent=t; modalList.appendChild(li);
       });
 
+      // Őrszöveg (pl. "TÖRLÉS") – csak ha kérjük
+      if(requireText){
+        guardTextEl.textContent = requireText;
+        modalInput.value = '';
+        modalGuard.classList.remove('hide');
+        modalOk.disabled = true;
+        const onInput = ()=>{
+          modalOk.disabled = modalInput.value.trim() !== requireText;
+        };
+        modalInput.removeEventListener('input', modalInput._handler || (()=>{}));
+        modalInput._handler = onInput;
+        modalInput.addEventListener('input', onInput);
+      }else{
+        modalGuard.classList.add('hide');
+        modalOk.disabled = false;
+      }
+
       return new Promise(resolve=>{
         const onOk = ()=>{ cleanup(); resolve(true); };
         const onCancel = ()=>{ cleanup(); resolve(false); };
-        function onKey(e){ if(e.key==='Escape'){ onCancel(); } if(e.key==='Enter'){ onOk(); } }
+        function onKey(e){ if(e.key==='Escape'){ onCancel(); } if(e.key==='Enter' && !modalOk.disabled){ onOk(); } }
         function cleanup(){
           modalBackdrop.style.display='none';
           modalOk.removeEventListener('click', onOk);
           modalCancel.removeEventListener('click', onCancel);
           modalClose.removeEventListener('click', onCancel);
           document.removeEventListener('keydown', onKey);
+          if(requireText){
+            modalInput.removeEventListener('input', modalInput._handler || (()=>{}));
+          }
         }
         modalBackdrop.style.display='flex';
         modalOk.addEventListener('click', onOk);
@@ -713,6 +737,45 @@
       (type==='in' ? document.getElementById('in-note') : document.getElementById('out-note')).value='';
     }
 
+    // ====== Teljes adatbázis törlés ======
+    document.getElementById('wipe-all').addEventListener('click', async ()=>{
+      const ok = await openConfirm({
+        title: 'Teljes adatbázis törlése',
+        message: 'Biztosan törlöd az ÖSSZES adatot? A művelet nem visszavonható.',
+        summary: 'Érintett kollekciók: beszállítók, megrendelők, termékek, mozgások.',
+        items: ['A törlés nagy mennyiségű művelet lehet.'],
+        requireText: 'TÖRLÉS'
+      });
+      if(!ok) return;
+
+      try{
+        await wipeCollection(COL_MOVEMENTS);
+        await wipeCollection(COL_PRODUCTS);
+        await wipeCollection(COL_SUPPLIERS);
+        await wipeCollection(COL_CUSTOMERS);
+        showSnack('Adatbázis törölve.');
+      }catch(e){
+        showErr('Törlés hiba: ' + (e?.message || e));
+      }
+    });
+
+    async function wipeCollection(colName){
+      // Lekérés és törlés 400-as csomagokban
+      while(true){
+        const snap = await getDocs(collection(db, colName));
+        if(snap.empty) break;
+        const ids = snap.docs.map(d=>d.id);
+        const chunkSize = 400;
+        for(let i=0;i<ids.length;i+=chunkSize){
+          const batch = writeBatch(db);
+          ids.slice(i,i+chunkSize).forEach(id=>{
+            batch.delete(doc(collection(db, colName), id));
+          });
+          await batch.commit();
+        }
+      }
+    }
+
     // Lista renderelés – típus ikonokkal
     function renderSuppliers(){
       const tb = document.getElementById('tbody-sup'); tb.innerHTML='';
@@ -758,17 +821,8 @@
     }
 
     function typeBadge(type){
-      if(type==='in'){
-        return `<span class="type-badge type-in"><span class="dot"></span>Bevét</span>`;
-      }else{
-        return `<span class="type-badge type-out"><span class="dot"></span>Kiadás</span>`;
-      }
-    }
-
-    function dateFilter(stamp, from, to) {
-      if(from && stamp < from) return false;
-      if(to && stamp > to) return false;
-      return true;
+      if(type==='in'){ return `<span class="type-badge type-in"><span class="dot"></span>Bevét</span>`; }
+      else { return `<span class="type-badge type-out"><span class="dot"></span>Kiadás</span>`; }
     }
 
     function renderFilteredMovements() {
@@ -776,10 +830,8 @@
       const toIn = document.getElementById('in-filter-to').value;
       const tbIn = document.getElementById('tbody-in');
       tbIn.innerHTML = '';
-      movements.filter(m=>
-        m.type==='in'
-        && dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn)
-      ).forEach(m=>{
+      movements.filter(m=> m.type==='in' && dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn))
+      .forEach(m=>{
         const p = getProduct(m.productId);
         const partner = getSupplier(m.partnerId);
         const tr = document.createElement('tr');
@@ -791,16 +843,20 @@
       const toOut = document.getElementById('out-filter-to').value;
       const tbOut = document.getElementById('tbody-out');
       tbOut.innerHTML = '';
-      movements.filter(m=>
-        m.type==='out'
-        && dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut)
-      ).forEach(m=>{
+      movements.filter(m=> m.type==='out' && dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut))
+      .forEach(m=>{
         const p = getProduct(m.productId);
         const partner = getCustomer(m.partnerId);
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>${typeBadge('out')}</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
         tbOut.appendChild(tr);
       });
+    }
+
+    function dateFilter(stamp, from, to) {
+      if(from && stamp < from) return false;
+      if(to && stamp > to) return false;
+      return true;
     }
 
     ['in', 'out'].forEach(prefix=>{
@@ -901,11 +957,8 @@
     }
 
     async function delDoc(col, id){
-      try {
-        await deleteDoc(doc(db, col, id));
-      } catch(e) {
-        showErr('Törlés hiba: '+(e?.message||e));
-      }
+      try { await deleteDoc(doc(db, col, id)); }
+      catch(e) { showErr('Törlés hiba: '+(e?.message||e)); }
     }
 
     function getProduct(id){ return products.find(p=>p.id===id); }
