@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Egyszerű készletkezelő (HTML + Firebase)</title>
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --accent:#0f172a; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:var(--bg);color:var(--ink)}
+    .wrap{max-width:1100px;margin:auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+    h1{font-size:clamp(20px,2.6vw,28px);margin:0}
+    .tag{font-size:12px;color:var(--muted)}
+
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px}
+    .tabbtn{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#f1f5f9;cursor:pointer}
+    .tabbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 0 rgba(2,6,23,.04)}
+    .grid{display:grid;gap:16px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+    label{font-size:13px;color:var(--muted);display:block;margin:4px 0}
+    input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    textarea{min-height:72px}
+    .row{display:flex;gap:8px;align-items:center}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+    .btn.secondary{background:#fff;color:var(--accent)}
+
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:640px}
+    thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line)}
+    td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
+    tbody tr.low{background:#fff1f2}
+    .tools button{font-size:12px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc;cursor:pointer}
+
+    .muted{color:var(--muted)}
+    .error{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;padding:10px;border-radius:12px}
+    .hide{display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Egyszerű készletkezelő</h1>
+      <div class="tag">Firebase szinkron • „mosás-nyilvántartás”</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tabbtn active" data-tab="bevet">Bevét</button>
+      <button class="tabbtn" data-tab="kiadas">Kiadás</button>
+      <button class="tabbtn" data-tab="keszlet">Raktárkészlet</button>
+      <button class="tabbtn" data-tab="torzs">Törzsadatok</button>
+    </div>
+
+    <div id="err" class="error hide"></div>
+
+    <!-- Bevét -->
+    <section id="tab-bevet" class="grid">
+      <div class="card">
+        <h2>Új bevét rögzítése</h2>
+        <form id="form-in" class="grid grid-2">
+          <div>
+            <label>Termék</label>
+            <select id="in-product" required></select>
+          </div>
+          <div>
+            <label>Mennyiség</label>
+            <input id="in-qty" type="number" min="0.01" step="0.01" required />
+          </div>
+          <div>
+            <label>Mértékegység</label>
+            <input id="in-unit" />
+          </div>
+          <div>
+            <label>Beszállító</label>
+            <select id="in-supplier" required></select>
+          </div>
+          <div class="grid-2" style="grid-column:1/-1">
+            <div style="grid-column:1/-1">
+              <label>Megjegyzés</label>
+              <textarea id="in-note"></textarea>
+            </div>
+            <div class="row">
+              <button class="btn" type="submit">Rögzít</button>
+              <span class="muted" id="in-hint"></span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Legutóbbi bevétek</h3>
+        <div class="tablewrap" style="overflow:auto">
+          <table>
+            <thead>
+              <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
+            </thead>
+            <tbody id="tbody-in"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kiadás -->
+    <section id="tab-kiadas" class="grid hide">
+      <div class="card">
+        <h2>Új kiadás rögzítése</h2>
+        <form id="form-out" class="grid grid-2">
+          <div>
+            <label>Termék</label>
+            <select id="out-product" required></select>
+          </div>
+          <div>
+            <label>Mennyiség</label>
+            <input id="out-qty" type="number" min="0.01" step="0.01" required />
+          </div>
+          <div>
+            <label>Mértékegység</label>
+            <input id="out-unit" />
+          </div>
+          <div>
+            <label>Megrendelő</label>
+            <select id="out-customer" required></select>
+          </div>
+          <div class="grid-2" style="grid-column:1/-1">
+            <div style="grid-column:1/-1">
+              <label>Megjegyzés</label>
+              <textarea id="out-note"></textarea>
+            </div>
+            <div class="row">
+              <button class="btn" type="submit">Rögzít</button>
+              <span class="muted" id="out-hint"></span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>Legutóbbi kiadások</h3>
+        <div class="tablewrap" style="overflow:auto">
+          <table>
+            <thead>
+              <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
+            </thead>
+            <tbody id="tbody-out"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Készlet -->
+    <section id="tab-keszlet" class="grid hide">
+      <div class="card">
+        <h2>Raktárkészlet</h2>
+        <div class="tablewrap" style="overflow:auto">
+          <table>
+            <thead>
+              <tr><th>Termék</th><th>Cikkszám</th><th>Készlet</th><th>ME</th><th>Min. készlet</th></tr>
+            </thead>
+            <tbody id="tbody-stock"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Összes mozgás</h3>
+        <div class="tablewrap" style="overflow:auto">
+          <table>
+            <thead>
+              <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
+            </thead>
+            <tbody id="tbody-all"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Törzsadatok -->
+    <section id="tab-torzs" class="grid grid-3 hide">
+      <div class="card">
+        <h2>Beszállítók</h2>
+        <form id="form-sup">
+          <label>Név</label>
+          <input id="sup-name" placeholder="Név" required />
+          <label>Megjegyzés</label>
+          <input id="sup-note" placeholder="Megjegyzés" />
+          <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
+        </form>
+        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+          <table>
+            <thead><tr><th>Név</th><th class="tools">Művelet</th></tr></thead>
+            <tbody id="tbody-sup"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Megrendelők</h2>
+        <form id="form-cus">
+          <label>Név</label>
+          <input id="cus-name" placeholder="Név" required />
+          <label>Megjegyzés</label>
+          <input id="cus-note" placeholder="Megjegyzés" />
+          <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
+        </form>
+        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+          <table>
+            <thead><tr><th>Név</th><th class="tools">Művelet</th></tr></thead>
+            <tbody id="tbody-cus"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Termékek</h2>
+        <form id="form-prod">
+          <label>Cikkszám (opcionális)</label>
+          <input id="prod-sku" placeholder="Cikkszám" />
+          <label>Megnevezés</label>
+          <input id="prod-name" placeholder="Megnevezés" required />
+          <div class="grid grid-2">
+            <div>
+              <label>Mértékegység</label>
+              <input id="prod-unit" value="db" />
+            </div>
+            <div>
+              <label>Min. készlet</label>
+              <input id="prod-min" type="number" value="0" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
+        </form>
+        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+          <table>
+            <thead><tr><th>Megnevezés</th><th>Részletek</th><th class="tools">Művelet</th></tr></thead>
+            <tbody id="tbody-prod"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="muted" style="text-align:center;margin-top:24px">
+      Készült: <span id="stamp"></span> • Negatív készlet tiltva • Real-time Firestore
+    </footer>
+  </div>
+
+  <!-- Firebase v9+ modular CDN -->
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // 1) TÖLTSD KI A FIREBASE KONFIGOT (Firebase Console → Project settings → Web app)
+    const firebaseConfig = {
+      apiKey: "PASTE_YOURS",
+      authDomain: "PASTE_YOURS",
+      projectId: "PASTE_YOURS",
+      storageBucket: "PASTE_YOURS",
+      messagingSenderId: "PASTE_YOURS",
+      appId: "PASTE_YOURS",
+    };
+
+    if (!getApps().length) initializeApp(firebaseConfig);
+    const db = getFirestore();
+
+    // Kollekciók a „mosás-nyilvántartás” projekthez
+    const COL_SUPPLIERS = 'mosas_suppliers';
+    const COL_CUSTOMERS = 'mosas_customers';
+    const COL_PRODUCTS = 'mosas_products';
+    const COL_MOVEMENTS = 'mosas_movements';
+
+    // Állapot
+    let suppliers = [], customers = [], products = [], movements = [];
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const fmt = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 });
+    const nowISO = () => new Date().toISOString().slice(0,19).replace('T',' ');
+
+    $('#stamp').textContent = nowISO();
+
+    // Tabok
+    $$('.tabbtn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        $$('.tabbtn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const id = btn.dataset.tab;
+        ['bevet','kiadas','keszlet','torzs'].forEach(t=>{
+          $('#tab-'+t).classList.toggle('hide', t!==id);
+        });
+      });
+    });
+
+    // Élő feliratkozások
+    onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{
+      suppliers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderSuppliers(); fillPartners();
+    });
+    onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{
+      customers = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderCustomers(); fillPartners();
+    });
+    onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{
+      products = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderProducts(); fillProducts(); renderStock();
+    });
+    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderMovements(); renderStock();
+    });
+
+    // ----- Űrlapok -----
+    $('#form-sup').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const name = $('#sup-name').value.trim();
+      const note = $('#sup-note').value.trim();
+      if(!name) return;
+      await addDoc(collection(db, COL_SUPPLIERS), { name, note, createdAt: serverTimestamp() });
+      e.target.reset();
+    });
+
+    $('#form-cus').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const name = $('#cus-name').value.trim();
+      const note = $('#cus-note').value.trim();
+      if(!name) return;
+      await addDoc(collection(db, COL_CUSTOMERS), { name, note, createdAt: serverTimestamp() });
+      e.target.reset();
+    });
+
+    $('#form-prod').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const sku = $('#prod-sku').value.trim();
+      const name = $('#prod-name').value.trim();
+      const unit = $('#prod-unit').value.trim() || 'db';
+      const min = Number($('#prod-min').value||0);
+      if(!name) return;
+      await addDoc(collection(db, COL_PRODUCTS), { sku, name, unit, min, createdAt: serverTimestamp() });
+      e.target.reset();
+      $('#prod-unit').value = 'db';
+      $('#prod-min').value = 0;
+    });
+
+    $('#form-in').addEventListener('submit', (e)=>handleMovement(e, 'in'));
+    $('#form-out').addEventListener('submit', (e)=>handleMovement(e, 'out'));
+
+    async function handleMovement(e, type){
+      e.preventDefault();
+      hideErr();
+      const pid = (type==='in'? '#in-product':'#out-product');
+      const qid  = (type==='in'? '#in-qty':'#out-qty');
+      const uid  = (type==='in'? '#in-unit':'#out-unit');
+      const partid = (type==='in'? '#in-supplier':'#out-customer');
+      const nid = (type==='in'? '#in-note':'#out-note');
+
+      const productId = $(pid).value;
+      const qty = Number($(qid).value);
+      const unit = $(uid).value.trim() || (getProduct(productId)?.unit || 'db');
+      const partnerId = $(partid).value;
+      const note = $(nid).value.trim();
+
+      if(!productId) return showErr('Válassz terméket!');
+      if(!qty || qty<=0) return showErr('A mennyiség legyen nagyobb 0-nál!');
+      if(!partnerId) return showErr(type==='in' ? 'Válassz beszállítót!' : 'Válassz megrendelőt!');
+
+      // Negatív készlet tiltás
+      if(type==='out'){
+        const available = stockMap().get(productId) || 0;
+        if(qty > available) return showErr(`Nincs elegendő készlet. Elérhető: ${available}`);
+      }
+
+      await addDoc(collection(db, COL_MOVEMENTS), {
+        type,
+        productId,
+        qty,
+        unit,
+        partnerId,
+        note,
+        ts: serverTimestamp(),
+        stamp: nowISO(),
+      });
+
+      e.target.reset();
+      // tartsuk a unit mezőt a termék egységén
+      const p = getProduct(productId);
+      if(type==='in') $('#in-unit').value = p?.unit || 'db';
+      else $('#out-unit').value = p?.unit || 'db';
+    }
+
+    // ----- Renderelők -----
+    function renderSuppliers(){
+      const tb = $('#tbody-sup'); tb.innerHTML='';
+      suppliers.forEach(s=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(s.name)}</td><td class="tools"><button data-id="${s.id}" data-col="${COL_SUPPLIERS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_SUPPLIERS, s.id));
+        tb.appendChild(tr);
+      });
+    }
+    function renderCustomers(){
+      const tb = $('#tbody-cus'); tb.innerHTML='';
+      customers.forEach(c=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(c.name)}</td><td class="tools"><button data-id="${c.id}" data-col="${COL_CUSTOMERS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_CUSTOMERS, c.id));
+        tb.appendChild(tr);
+      });
+    }
+    function renderProducts(){
+      const tb = $('#tbody-prod'); tb.innerHTML='';
+      products.forEach(p=>{
+        const details = [p.sku||'', p.unit?`ME: ${p.unit}`:'', (p.min||0)>0?`min: ${p.min}`:''].filter(Boolean).join(' • ');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(p.name)}</td><td class="muted">${esc(details)}</td><td class="tools"><button data-id="${p.id}" data-col="${COL_PRODUCTS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_PRODUCTS, p.id));
+        tb.appendChild(tr);
+      });
+    }
+
+    function renderMovements(){
+      const tbAll = $('#tbody-all'); tbAll.innerHTML='';
+      const tbIn = $('#tbody-in'); tbIn.innerHTML='';
+      const tbOut = $('#tbody-out'); tbOut.innerHTML='';
+
+      movements.forEach(m=>{
+        const p = getProduct(m.productId);
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>${m.type==='in'?'Bevét':'Kiadás'}</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
+        tbAll.appendChild(tr.cloneNode(true));
+        (m.type==='in'? tbIn : tbOut).appendChild(tr);
+      });
+    }
+
+    function renderStock(){
+      const tb = $('#tbody-stock'); tb.innerHTML='';
+      const map = stockMap();
+      products.forEach(p=>{
+        const qty = map.get(p.id) || 0;
+        const tr = document.createElement('tr');
+        if(p.min && qty < p.min) tr.classList.add('low');
+        tr.innerHTML = `<td>${esc(p.name)}</td><td>${esc(p.sku||'')}</td><td>${fmt.format(qty)}</td><td>${esc(p.unit||'db')}</td><td>${p.min??0}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+
+    function stockMap(){
+      const m = new Map();
+      movements.forEach(v=>{
+        const sign = v.type==='in'? 1 : -1;
+        m.set(v.productId, (m.get(v.productId)||0) + sign*Number(v.qty||0));
+      });
+      return m;
+    }
+
+    function fillProducts(){
+      const opts = ['<option value="">– válassz –</option>'].concat(
+        products.map(p=>`<option value="${p.id}">${p.sku? esc(p.sku)+' – ' : ''}${esc(p.name)}</option>`) 
+      ).join('');
+      $('#in-product').innerHTML = opts;
+      $('#out-product').innerHTML = opts;
+
+      const setUnit = (sel, unitSel)=>{
+        sel.addEventListener('change', ()=>{
+          const p = getProduct(sel.value);
+          if(p) unitSel.value = p.unit || 'db';
+        });
+      };
+      setUnit($('#in-product'), $('#in-unit'));
+      setUnit($('#out-product'), $('#out-unit'));
+    }
+
+    function fillPartners(){
+      $('#in-supplier').innerHTML = ['<option value="">– válassz –</option>'].concat(
+        suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`)
+      ).join('');
+      $('#out-customer').innerHTML = ['<option value="">– válassz –</option>'].concat(
+        customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`)
+      ).join('');
+    }
+
+    async function delDoc(col, id){
+      await deleteDoc(doc(db, col, id));
+    }
+
+    function getProduct(id){ return products.find(p=>p.id===id); }
+    function getSupplier(id){ return suppliers.find(s=>s.id===id); }
+    function getCustomer(id){ return customers.find(c=>c.id===id); }
+
+    function showErr(msg){ const e=$('#err'); e.textContent=msg; e.classList.remove('hide'); }
+    function hideErr(){ $('#err').classList.add('hide'); }
+
+    // UX hint
+    $('#in-hint').textContent = 'Tipp: a mértékegység a termék egységét követi';
+    $('#out-hint').textContent = 'Negatív készlet kiadásnál tiltva';
+  </script>
+</body>
+</html>
