@@ -630,6 +630,8 @@
     if (btnStk) btnStk.addEventListener('click', ()=> exportStockCSV());
 
     function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+    // override normalize to robust accent-stripping
+    function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
     function tsToDate(m){
       if (m.ts && typeof m.ts.toDate === 'function') return m.ts.toDate();
@@ -664,13 +666,19 @@
     }
 
     function toCSV(rows){
-      const escCSV = (v)=>{ const s = String(v??''); if(/[,"
-]/.test(s)) return '"'+s.replace(/"/g,'""')+'"'; return s; };
+      const escCSV = (v)=>{ const s = String(v ?? ''); if(/[,\"
+]/.test(s)) return '"'+s.replace(/\"/g,'""')+'"'; return s; };
+      return rows.map(r=> r.map(escCSV).join(',')).join('
+');
+    };
       return rows.map(r=> r.map(escCSV).join(',')).join('
 ');
     }
     function downloadCSV(filename, csv){
       const blob = new Blob(["﻿" + csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }
