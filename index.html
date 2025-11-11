@@ -250,20 +250,22 @@
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     // 1) TÖLTSD KI A FIREBASE KONFIGOT (Firebase Console → Project settings → Web app)
     const firebaseConfig = {
       apiKey: "AIzaSyAeoxtOe5Cleasm3KdeSHP9WDR3PkU-N1I",
       authDomain: "mosas-nyilvantartas.firebaseapp.com",
       projectId: "mosas-nyilvantartas",
-      storageBucket: "mosas-nyilvantartas.firebasestorage.app",
+      storageBucket: "mosas-nyilvantartas.appspot.com",
       messagingSenderId: "38259241645",
-      appId: "38259241645",
+      appId: "1:38259241645:web:26070b1d0686def9f00c24",
     };
 
     if (!getApps().length) initializeApp(firebaseConfig);
     const db = getFirestore();
+    // (opcionális) Offline perzisztencia — ha nem támogatott, csendben továbblép
+    enableIndexedDbPersistence(db).catch((e)=>{ console.warn('IndexedDB perzisztencia nem elérhető:', e?.message||e); });
 
     // Kollekciók a „mosás-nyilvántartás” projekthez
     const COL_SUPPLIERS = 'mosas_suppliers';
@@ -317,7 +319,7 @@
       const name = $('#sup-name').value.trim();
       const note = $('#sup-note').value.trim();
       if(!name) return;
-      await addDoc(collection(db, COL_SUPPLIERS), { name, note, createdAt: serverTimestamp() });
+      try { await addDoc(collection(db, COL_SUPPLIERS), { name, note, createdAt: serverTimestamp() }); } catch(e){ showErr('Hiba (suppliers): '+(e?.message||e)); return; }
       e.target.reset();
     });
 
@@ -326,7 +328,7 @@
       const name = $('#cus-name').value.trim();
       const note = $('#cus-note').value.trim();
       if(!name) return;
-      await addDoc(collection(db, COL_CUSTOMERS), { name, note, createdAt: serverTimestamp() });
+      try { await addDoc(collection(db, COL_CUSTOMERS), { name, note, createdAt: serverTimestamp() }); } catch(e){ showErr('Hiba (customers): '+(e?.message||e)); return; }
       e.target.reset();
     });
 
@@ -337,7 +339,7 @@
       const unit = $('#prod-unit').value.trim() || 'db';
       const min = Number($('#prod-min').value||0);
       if(!name) return;
-      await addDoc(collection(db, COL_PRODUCTS), { sku, name, unit, min, createdAt: serverTimestamp() });
+      try { await addDoc(collection(db, COL_PRODUCTS), { sku, name, unit, min, createdAt: serverTimestamp() }); } catch(e){ showErr('Hiba (products): '+(e?.message||e)); return; }
       e.target.reset();
       $('#prod-unit').value = 'db';
       $('#prod-min').value = 0;
@@ -371,16 +373,18 @@
         if(qty > available) return showErr(`Nincs elegendő készlet. Elérhető: ${available}`);
       }
 
-      await addDoc(collection(db, COL_MOVEMENTS), {
-        type,
-        productId,
-        qty,
-        unit,
-        partnerId,
-        note,
-        ts: serverTimestamp(),
-        stamp: nowISO(),
-      });
+      try {
+        await addDoc(collection(db, COL_MOVEMENTS), {
+          type,
+          productId,
+          qty,
+          unit,
+          partnerId,
+          note,
+          ts: serverTimestamp(),
+          stamp: nowISO(),
+        });
+      } catch(e){ showErr('Hiba (movements): '+(e?.message||e)); return; }
 
       e.target.reset();
       // tartsuk a unit mezőt a termék egységén
@@ -482,7 +486,7 @@
     }
 
     async function delDoc(col, id){
-      await deleteDoc(doc(db, col, id));
+      try { await deleteDoc(doc(db, col, id)); } catch(e){ showErr('Törlés hiba: '+(e?.message||e)); }
     }
 
     function getProduct(id){ return products.find(p=>p.id===id); }
