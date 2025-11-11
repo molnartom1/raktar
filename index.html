@@ -629,7 +629,6 @@
     if (btnMov) btnMov.addEventListener('click', ()=> exportMovementsCSV());
     if (btnStk) btnStk.addEventListener('click', ()=> exportStockCSV());
 
-    function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
     // override normalize to robust accent-stripping
     function normalize(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
 
