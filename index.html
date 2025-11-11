@@ -251,6 +251,7 @@
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     // 1) TÖLTSD KI A FIREBASE KONFIGOT (Firebase Console → Project settings → Web app)
     const firebaseConfig = {
@@ -266,6 +267,16 @@
     const db = getFirestore();
     // (opcionális) Offline perzisztencia — ha nem támogatott, csendben továbblép
     enableIndexedDbPersistence(db).catch((e)=>{ console.warn('IndexedDB perzisztencia nem elérhető:', e?.message||e); });
+
+    // Firebase Auth — a rules szerint bejelentkezés szükséges (anonim is jó)
+    const auth = getAuth();
+    onAuthStateChanged(auth, (user)=>{
+      if(!user){
+        signInAnonymously(auth).catch(e=>{
+          showErr('Anonim bejelentkezés hiba: '+(e?.message||e));
+        });
+      }
+    }); });
 
     // Kollekciók a „mosás-nyilvántartás” projekthez
     const COL_SUPPLIERS = 'mosas_suppliers';
