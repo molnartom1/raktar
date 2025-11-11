@@ -965,6 +965,7 @@
     function getCustomer(id){ return customers.find(c=>c.id===id); }
 
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
+    document.getElementById('diag')?.classList.add('hide');
   </script>
 </body>
 </html>
