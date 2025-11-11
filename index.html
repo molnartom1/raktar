@@ -63,6 +63,10 @@
             <label>Beszállító</label>
             <select id="in-supplier" required></select>
           </div>
+          <div>
+            <label>Dátum</label>
+            <input type="date" id="in-date" />
+          </div>
           <div class="grid-2" style="grid-column:1/-1">
             <div style="grid-column:1/-1">
               <label>Megjegyzés (összes sorra)</label>
@@ -109,6 +113,10 @@
           <div>
             <label>Megrendelő</label>
             <select id="out-customer" required></select>
+          </div>
+          <div>
+            <label>Dátum</label>
+            <input type="date" id="out-date" />
           </div>
           <div class="grid-2" style="grid-column:1/-1">
             <div style="grid-column:1/-1">
@@ -253,6 +261,11 @@
       window.hideErr = function(){ const e=$('#err'); if(!e) return; e.classList.add('hide'); };
       const stampEl = document.getElementById('stamp');
       if(stampEl){ const d=new Date(); stampEl.textContent = d.toISOString().slice(0,19).replace('T',' '); }
+      // Alapértelmezett dátum a mai nap
+      const today = new Date().toISOString().slice(0,10);
+      const inDate = document.getElementById('in-date'); if(inDate && !inDate.value) inDate.value = today;
+      const outDate = document.getElementById('out-date'); if(outDate && !outDate.value) outDate.value = today;
+      
       $$('.tabbtn').forEach(btn=>{
         btn.addEventListener('click',()=>{
           $$('.tabbtn').forEach(b=>b.classList.remove('active'));
@@ -270,7 +283,7 @@
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     // --- Firebase konfiguráció (a te projekted) ---
@@ -392,6 +405,8 @@
       hideErr();
       const partnerId = type==='in' ? document.getElementById('in-supplier').value : document.getElementById('out-customer').value;
       const globalNote = type==='in' ? document.getElementById('in-note').value.trim() : document.getElementById('out-note').value.trim();
+      const dateInput = type==='in' ? document.getElementById('in-date') : document.getElementById('out-date');
+      const customDate = (dateInput && dateInput.value) ? new Date(dateInput.value + 'T00:00:00') : null;
       if(!partnerId) return showErr(type==='in' ? 'Válassz beszállítót!' : 'Válassz megrendelőt!');
       // Gyűjtsük be a sorokat
       const tbody = type==='in' ? inRowsTbody : outRowsTbody;
@@ -429,8 +444,8 @@
             unit: r.unit,
             partnerId,
             note: r.note || globalNote || '',
-            ts: serverTimestamp(),
-            stamp: nowISO(),
+            ts: (customDate ? Timestamp.fromDate(customDate) : serverTimestamp()),
+            stamp: (customDate ? (dateInput.value + ' 00:00:00') : nowISO()),
           });
         }
         await batch.commit();
