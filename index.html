@@ -334,7 +334,13 @@
 
     // Auth → anonim login
     const auth = getAuth();
-    onAuthStateChanged(auth, (user)=>{ if(!user) signInAnonymously(auth).catch(e=>showErr('Anonim bejelentkezés: '+(e?.message||e))); });
+    onAuthStateChanged(auth, (user)=>{
+      if(!user){
+        signInAnonymously(auth).catch(e=>showErr('Anonim bejelentkezés: '+(e?.message||e)));
+      } else {
+        subscribeAll();
+      }
+    }); });
 
     // Kollekciók
     const COL_SUPPLIERS = 'mosas_suppliers';
@@ -349,11 +355,36 @@
     const fmt = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 });
     const nowISO = () => new Date().toISOString().slice(0,19).replace('T',' ');
 
-    // Élő feliratkozások
-    onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{ suppliers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderSuppliers(); fillPartners(); });
-    onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
-    onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); rerenderMovements(); });
-    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ movements = snap.docs.map(d=>({id:d.id, ...d.data()})); rerenderMovements(); renderStock(); });
+    // Élő feliratkozások – csak auth után!
+    let _unsubs = [];
+    function unsubscribeAll(){ _unsubs.forEach(u=>{ try{u&&u();}catch{} }); _unsubs = []; }
+    function subscribeAll(){
+      unsubscribeAll();
+      _unsubs.push(
+        onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')),
+          (snap)=>{ suppliers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderSuppliers(); fillPartners(); },
+          (err)=> showErr('Olvasási hiba (suppliers): '+(err?.message||err))
+        )
+      );
+      _unsubs.push(
+        onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')),
+          (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); },
+          (err)=> showErr('Olvasási hiba (customers): '+(err?.message||err))
+        )
+      );
+      _unsubs.push(
+        onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')),
+          (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); rerenderMovements(); },
+          (err)=> showErr('Olvasási hiba (products): '+(err?.message||err))
+        )
+      );
+      _unsubs.push(
+        onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')),
+          (snap)=>{ movements = snap.docs.map(d=>({id:d.id, ...d.data()})); rerenderMovements(); renderStock(); },
+          (err)=> showErr('Olvasási hiba (movements): '+(err?.message||err))
+        )
+      );
+    } rerenderMovements(); renderStock(); });
 
     // ----- Többsoros űrlapok (bevét/kiadás) -----
     const inRowsTbody = document.getElementById('tbody-in-rows');
