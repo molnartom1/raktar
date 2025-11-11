@@ -249,6 +249,25 @@
 
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
+    // --- Korai UI init: a fülek akkor is működjenek, ha a Firebase rész hibázik ---
+    (function(){
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+      function showErr(msg){ const e=$('#err'); if(!e) return; e.textContent=String(msg||'Ismeretlen hiba'); e.classList.remove('hide'); }
+      function hideErr(){ const e=$('#err'); if(!e) return; e.classList.add('hide'); }
+      // Fülkezelés
+      $$('.tabbtn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          $$('.tabbtn').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          const id = btn.dataset.tab;
+          ['bevet','kiadas','keszlet','torzs'].forEach(t=>{
+            const sec = document.getElementById('tab-'+t);
+            if(sec) sec.classList.toggle('hide', t!==id);
+          });
+        });
+      });
+    })();
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
