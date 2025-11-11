@@ -74,11 +74,13 @@
             </div>
           </div>
         </div>
+
         <div style="margin-top:12px" class="row">
           <button id="in-add-row" class="btn ghost" type="button">+ Sor hozzáadása</button>
           <button id="in-clear-rows" class="btn secondary" type="button">Sorok törlése</button>
           <div class="muted" id="in-sum"></div>
         </div>
+
         <div class="tablewrap" style="overflow:auto;margin-top:10px">
           <table>
             <thead>
@@ -87,9 +89,19 @@
             <tbody id="tbody-in-rows"></tbody>
           </table>
         </div>
+
         <div class="row" style="margin-top:12px">
           <button class="btn" id="in-submit" type="button">Bevét rögzítése</button>
         </div>
+      </div>
+
+      <!-- Bevét szűrő -->
+      <div class="row" style="margin-bottom:10px; margin-top:20px;">
+        <label for="in-filter-from">Dátum szűrés:</label>
+        <input id="in-filter-from" type="date" style="max-width:140px;margin-left:3px;">
+        <span style="margin:0 5px;">–</span>
+        <input id="in-filter-to" type="date" style="max-width:140px;">
+        <button class="btn ghost" id="in-filter-reset" type="button" style="margin-left:8px;">Törlés</button>
       </div>
 
       <div class="card">
@@ -125,11 +137,13 @@
             </div>
           </div>
         </div>
+
         <div style="margin-top:12px" class="row">
           <button id="out-add-row" class="btn ghost" type="button">+ Sor hozzáadása</button>
           <button id="out-clear-rows" class="btn secondary" type="button">Sorok törlése</button>
           <div class="muted" id="out-sum"></div>
         </div>
+
         <div class="tablewrap" style="overflow:auto;margin-top:10px">
           <table>
             <thead>
@@ -138,9 +152,19 @@
             <tbody id="tbody-out-rows"></tbody>
           </table>
         </div>
+
         <div class="row" style="margin-top:12px">
           <button class="btn" id="out-submit" type="button">Kiadás rögzítése</button>
         </div>
+      </div>
+
+      <!-- Kiadás szűrő -->
+      <div class="row" style="margin-bottom:10px; margin-top:20px;">
+        <label for="out-filter-from">Dátum szűrés:</label>
+        <input id="out-filter-from" type="date" style="max-width:140px;margin-left:3px;">
+        <span style="margin:0 5px;">–</span>
+        <input id="out-filter-to" type="date" style="max-width:140px;">
+        <button class="btn ghost" id="out-filter-reset" type="button" style="margin-left:8px;">Törlés</button>
       </div>
 
       <div class="card">
@@ -169,6 +193,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h3>Összes mozgás</h3>
         <div class="tablewrap" style="overflow:auto">
@@ -200,6 +225,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h2>Megrendelők</h2>
         <form id="form-cus">
@@ -216,6 +242,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h2>Termékek</h2>
         <form id="form-prod">
@@ -308,9 +335,8 @@
     onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{ suppliers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderSuppliers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); });
-    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ movements = snap.docs.map(d=>({id:d.id, ...d.data()})); renderMovements(); renderStock(); });
+    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ movements = snap.docs.map(d=>({id:d.id, ...d.data()})); renderMovements(); renderStock(); renderFilteredMovements(); });
 
-    // ----- Többsoros űrlapok (bevét/kiadás) -----
     const inRowsTbody = document.getElementById('tbody-in-rows');
     const outRowsTbody = document.getElementById('tbody-out-rows');
     document.getElementById('in-add-row').addEventListener('click', ()=> addLineRow(inRowsTbody, 'in'));
@@ -369,7 +395,7 @@
       sel.addEventListener('change', ()=>{
         const p = getProduct(sel.value);
         unitInput.value = p?.unit || 'db';
-      }, { once:true }); // első kiválasztásnál töltsük ki
+      }, { once:true });
     }
 
     function updateSum(type){
@@ -421,7 +447,7 @@
             partnerId,
             note: r.note || globalNote || '',
             ts: serverTimestamp(),
-            stamp: date,   // Felhasználói dátum mentése!
+            stamp: date,
           });
         }
         await batch.commit();
@@ -466,6 +492,8 @@
         tb.appendChild(tr);
       });
     }
+
+    // Eredeti renderMovements változat
     function renderMovements(){
       const tbAll = document.getElementById('tbody-all'); tbAll.innerHTML='';
       const tbIn = document.getElementById('tbody-in'); tbIn.innerHTML='';
@@ -479,6 +507,67 @@
         (m.type==='in'? tbIn : tbOut).appendChild(tr);
       });
     }
+
+    // Dátum szerinti szűrés függvény
+    function dateFilter(stamp, from, to) {
+      if(from && stamp < from) return false;
+      if(to && stamp > to) return false;
+      return true;
+    }
+
+    // Szűrt megjelenítés a listákhoz
+    function renderFilteredMovements() {
+      const fromIn = document.getElementById('in-filter-from').value;
+      const toIn = document.getElementById('in-filter-to').value;
+      const tbIn = document.getElementById('tbody-in');
+      tbIn.innerHTML = '';
+      movements.filter(m=>
+        m.type==='in'
+        && dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn)
+      ).forEach(m=>{
+        const p = getProduct(m.productId);
+        const partner = getSupplier(m.partnerId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>Bevét</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
+        tbIn.appendChild(tr);
+      });
+
+      const fromOut = document.getElementById('out-filter-from').value;
+      const toOut = document.getElementById('out-filter-to').value;
+      const tbOut = document.getElementById('tbody-out');
+      tbOut.innerHTML = '';
+      movements.filter(m=>
+        m.type==='out'
+        && dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut)
+      ).forEach(m=>{
+        const p = getProduct(m.productId);
+        const partner = getCustomer(m.partnerId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>Kiadás</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
+        tbOut.appendChild(tr);
+      });
+    }
+
+    // Szűrő események beállítása
+    ['in', 'out'].forEach(prefix=>{
+      document.getElementById(`${prefix}-filter-from`).addEventListener('input', renderFilteredMovements);
+      document.getElementById(`${prefix}-filter-to`).addEventListener('input', renderFilteredMovements);
+      document.getElementById(`${prefix}-filter-reset`).addEventListener('click', ()=>{
+        document.getElementById(`${prefix}-filter-from`).value = '';
+        document.getElementById(`${prefix}-filter-to`).value = '';
+        renderFilteredMovements();
+      });
+    });
+
+    // Betöltéskor szűrt lista frissítés
+    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderMovements();
+      renderFilteredMovements();
+      renderStock();
+    });
+
+    // További segédfüggvények ...
     function renderStock(){
       const tb = document.getElementById('tbody-stock'); tb.innerHTML='';
       const map = stockMap();
@@ -490,17 +579,23 @@
         tb.appendChild(tr);
       });
     }
+
     function stockMap(){
       const m = new Map();
-      movements.forEach(v=>{ const sign = v.type==='in'? 1 : -1; m.set(v.productId, (m.get(v.productId)||0) + sign*Number(v.qty||0)); });
+      movements.forEach(v=>{
+        const sign = v.type==='in'? 1 : -1;
+        m.set(v.productId, (m.get(v.productId)||0) + sign*Number(v.qty||0));
+      });
       return m;
     }
+
     function fillProducts(){
-      [ ...document.querySelectorAll('.li-product') ].forEach(sel=>{
+      [...document.querySelectorAll('.li-product')].forEach(sel=>{
         const unitInput = sel.closest('tr').querySelector('.li-unit');
         fillRowProducts(sel, unitInput);
       });
     }
+
     function fillPartners(){
       document.getElementById('in-supplier').innerHTML = ['<option value="">– válassz –</option>'].concat(
         suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`)
@@ -509,10 +604,19 @@
         customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`)
       ).join('');
     }
-    async function delDoc(col, id){ try { await deleteDoc(doc(db, col, id)); } catch(e){ showErr('Törlés hiba: '+(e?.message||e)); } }
+
+    async function delDoc(col, id){
+      try {
+        await deleteDoc(doc(db, col, id));
+      } catch(e) {
+        showErr('Törlés hiba: '+(e?.message||e));
+      }
+    }
+
     function getProduct(id){ return products.find(p=>p.id===id); }
     function getSupplier(id){ return suppliers.find(s=>s.id===id); }
     function getCustomer(id){ return customers.find(c=>c.id===id); }
+
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
   </script>
 </body>
