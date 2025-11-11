@@ -12,25 +12,30 @@
     header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
     h1{font-size:clamp(20px,2.6vw,28px);margin:0}
     .tag{font-size:12px;color:var(--muted)}
+
     .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px}
     .tabbtn{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#f1f5f9;cursor:pointer}
     .tabbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
     .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 1px 0 rgba(2,6,23,.04)}
     .grid{display:grid;gap:16px}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     @media (max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
     label{font-size:13px;color:var(--muted);display:block;margin:4px 0}
     input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
     textarea{min-height:72px}
     .row{display:flex;gap:8px;align-items:center}
     .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--accent)}
+
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:640px}
     thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line)}
     td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
     tbody tr.low{background:#fff1f2}
     .tools button{font-size:12px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc;cursor:pointer}
+
     .muted{color:var(--muted)}
     .error{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;padding:10px;border-radius:12px}
     .hide{display:none}
@@ -42,13 +47,16 @@
       <h1>Egyszerű készletkezelő</h1>
       <div class="tag">Firebase szinkron • „mosás-nyilvántartás”</div>
     </header>
+
     <div class="tabs">
       <button class="tabbtn active" data-tab="bevet">Bevét</button>
       <button class="tabbtn" data-tab="kiadas">Kiadás</button>
       <button class="tabbtn" data-tab="keszlet">Raktárkészlet</button>
       <button class="tabbtn" data-tab="torzs">Törzsadatok</button>
     </div>
+
     <div id="err" class="error hide"></div>
+
     <!-- Bevét -->
     <section id="tab-bevet" class="grid">
       <div class="card">
@@ -82,6 +90,7 @@
           </div>
         </form>
       </div>
+
       <div class="card">
         <h3>Legutóbbi bevétek</h3>
         <div class="tablewrap" style="overflow:auto">
@@ -94,6 +103,7 @@
         </div>
       </div>
     </section>
+
     <!-- Kiadás -->
     <section id="tab-kiadas" class="grid hide">
       <div class="card">
@@ -127,6 +137,7 @@
           </div>
         </form>
       </div>
+
       <div class="card">
         <h3>Legutóbbi kiadások</h3>
         <div class="tablewrap" style="overflow:auto">
@@ -139,6 +150,7 @@
         </div>
       </div>
     </section>
+
     <!-- Készlet -->
     <section id="tab-keszlet" class="grid hide">
       <div class="card">
@@ -152,6 +164,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h3>Összes mozgás</h3>
         <div class="tablewrap" style="overflow:auto">
@@ -164,6 +177,7 @@
         </div>
       </div>
     </section>
+
     <!-- Törzsadatok -->
     <section id="tab-torzs" class="grid grid-3 hide">
       <div class="card">
@@ -182,6 +196,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h2>Megrendelők</h2>
         <form id="form-cus">
@@ -198,6 +213,7 @@
           </table>
         </div>
       </div>
+
       <div class="card">
         <h2>Termékek</h2>
         <form id="form-prod">
@@ -225,19 +241,46 @@
         </div>
       </div>
     </section>
+
     <footer class="muted" style="text-align:center;margin-top:24px">
       Készült: <span id="stamp"></span> • Negatív készlet tiltva • Real-time Firestore
     </footer>
   </div>
+
   <!-- Firebase v9+ modular CDN -->
+  <script>
+    // UI bootstrap KÜLÖN, hogy a Firebase modul import hibája se állítsa meg a füleket
+    (function(){
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+      window.showErr = function(msg){ const e=$('#err'); if(!e) return; e.textContent=String(msg||'Ismeretlen hiba'); e.classList.remove('hide'); };
+      window.hideErr = function(){ const e=$('#err'); if(!e) return; e.classList.add('hide'); };
+      // Dátumbélyeg frissítése
+      const stampEl = document.getElementById('stamp');
+      if(stampEl){ const d=new Date(); stampEl.textContent = d.toISOString().slice(0,19).replace('T',' '); }
+      // Fülek bekötése
+      $$('.tabbtn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          $$('.tabbtn').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          const id = btn.getAttribute('data-tab');
+          ['bevet','kiadas','keszlet','torzs'].forEach(t=>{
+            const sec = document.getElementById('tab-'+t);
+            if(sec) sec.classList.toggle('hide', t!==id);
+          });
+        });
+      });
+    })();
+  </script>
+
   <script type="module">
-    // --- Tabkezelő: csak egyszer, azonnal ---
+    // --- Korai UI init: a fülek akkor is működjenek, ha a Firebase rész hibázik ---
     (function(){
       const $ = (sel) => document.querySelector(sel);
       const $$ = (sel) => Array.from(document.querySelectorAll(sel));
       function showErr(msg){ const e=$('#err'); if(!e) return; e.textContent=String(msg||'Ismeretlen hiba'); e.classList.remove('hide'); }
       function hideErr(){ const e=$('#err'); if(!e) return; e.classList.add('hide'); }
-      // Fülkezelés (ez maradjon, lásd javítás)
+      // Fülkezelés
       $$('.tabbtn').forEach(btn=>{
         btn.addEventListener('click',()=>{
           $$('.tabbtn').forEach(b=>b.classList.remove('active'));
@@ -250,12 +293,11 @@
         });
       });
     })();
-
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-    // Firebase konfiguráció (projekt own settings)
+    // 1) TÖLTSD KI A FIREBASE KONFIGOT (Firebase Console → Project settings → Web app)
     const firebaseConfig = {
       apiKey: "AIzaSyAeoxtOe5Cleasm3KdeSHP9WDR3PkU-N1I",
       authDomain: "mosas-nyilvantartas.firebaseapp.com",
@@ -267,19 +309,25 @@
 
     if (!getApps().length) initializeApp(firebaseConfig);
     const db = getFirestore();
-
+    // (opcionális) Offline perzisztencia — ha nem támogatott, csendben továbblép
     enableIndexedDbPersistence(db).catch((e)=>{ console.warn('IndexedDB perzisztencia nem elérhető:', e?.message||e); });
 
+    // Firebase Auth — a rules szerint bejelentkezés szükséges (anonim is jó)
     const auth = getAuth();
     onAuthStateChanged(auth, (user)=>{
       if(!user){
         signInAnonymously(auth).catch(e=>{
           showErr('Anonim bejelentkezés hiba: '+(e?.message||e));
         });
+      } else {
+        // amikor van auth, feliratkozunk a Firestore-ra
+        subscribeAll();
       }
     });
+      }
+    }); });
 
-    // Kollekciók
+    // Kollekciók a „mosás-nyilvántartás” projekthez
     const COL_SUPPLIERS = 'mosas_suppliers';
     const COL_CUSTOMERS = 'mosas_customers';
     const COL_PRODUCTS = 'mosas_products';
@@ -295,25 +343,48 @@
 
     $('#stamp').textContent = nowISO();
 
-    // NINCS duplázott tab kezelő itt!
+    // Tabok
+    $$('.tabbtn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        $$('.tabbtn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const id = btn.dataset.tab;
+        ['bevet','kiadas','keszlet','torzs'].forEach(t=>{
+          $('#tab-'+t).classList.toggle('hide', t!==id);
+        });
+      });
+    });
 
-    // Élő feliratkozások
-    onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{
-      suppliers = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderSuppliers(); fillPartners();
-    });
-    onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{
-      customers = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderCustomers(); fillPartners();
-    });
-    onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{
-      products = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderProducts(); fillProducts(); renderStock();
-    });
-    onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{
-      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderMovements(); renderStock();
-    });
+    // Élő feliratkozások — csak AUTH UTÁN indítjuk, különben a rules miatt meghiúsulhat
+    let _subs = [];
+    function unsubscribeAll(){ _subs.forEach(fn=>{ try{fn&&fn();}catch{} }); _subs = []; }
+    function subscribeAll(){
+      unsubscribeAll();
+      _subs.push(
+        onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')),
+          (snap)=>{ suppliers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderSuppliers(); fillPartners(); },
+          (err)=>{ showErr('Olvasási hiba (suppliers): '+(err?.message||err)); }
+        )
+      );
+      _subs.push(
+        onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')),
+          (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); },
+          (err)=>{ showErr('Olvasási hiba (customers): '+(err?.message||err)); }
+        )
+      );
+      _subs.push(
+        onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')),
+          (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); },
+          (err)=>{ showErr('Olvasási hiba (products): '+(err?.message||err)); }
+        )
+      );
+      _subs.push(
+        onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')),
+          (snap)=>{ movements = snap.docs.map(d=>({id:d.id, ...d.data()})); renderMovements(); renderStock(); },
+          (err)=>{ showErr('Olvasási hiba (movements): '+(err?.message||err)); }
+        )
+      );
+    }
 
     // ----- Űrlapok -----
     $('#form-sup').addEventListener('submit', async (e)=>{
@@ -358,18 +429,23 @@
       const uid  = (type==='in'? '#in-unit':'#out-unit');
       const partid = (type==='in'? '#in-supplier':'#out-customer');
       const nid = (type==='in'? '#in-note':'#out-note');
+
       const productId = $(pid).value;
       const qty = Number($(qid).value);
       const unit = $(uid).value.trim() || (getProduct(productId)?.unit || 'db');
       const partnerId = $(partid).value;
       const note = $(nid).value.trim();
+
       if(!productId) return showErr('Válassz terméket!');
       if(!qty || qty<=0) return showErr('A mennyiség legyen nagyobb 0-nál!');
       if(!partnerId) return showErr(type==='in' ? 'Válassz beszállítót!' : 'Válassz megrendelőt!');
+
+      // Negatív készlet tiltás
       if(type==='out'){
         const available = stockMap().get(productId) || 0;
         if(qty > available) return showErr(`Nincs elegendő készlet. Elérhető: ${available}`);
       }
+
       try {
         await addDoc(collection(db, COL_MOVEMENTS), {
           type,
@@ -382,11 +458,14 @@
           stamp: nowISO(),
         });
       } catch(e){ showErr('Hiba (movements): '+(e?.message||e)); return; }
+
       e.target.reset();
+      // tartsuk a unit mezőt a termék egységén
       const p = getProduct(productId);
       if(type==='in') $('#in-unit').value = p?.unit || 'db';
       else $('#out-unit').value = p?.unit || 'db';
     }
+
     // ----- Renderelők -----
     function renderSuppliers(){
       const tb = $('#tbody-sup'); tb.innerHTML='';
@@ -416,10 +495,12 @@
         tb.appendChild(tr);
       });
     }
+
     function renderMovements(){
       const tbAll = $('#tbody-all'); tbAll.innerHTML='';
       const tbIn = $('#tbody-in'); tbIn.innerHTML='';
       const tbOut = $('#tbody-out'); tbOut.innerHTML='';
+
       movements.forEach(m=>{
         const p = getProduct(m.productId);
         const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
@@ -429,6 +510,7 @@
         (m.type==='in'? tbIn : tbOut).appendChild(tr);
       });
     }
+
     function renderStock(){
       const tb = $('#tbody-stock'); tb.innerHTML='';
       const map = stockMap();
@@ -440,6 +522,7 @@
         tb.appendChild(tr);
       });
     }
+
     function stockMap(){
       const m = new Map();
       movements.forEach(v=>{
@@ -448,12 +531,14 @@
       });
       return m;
     }
+
     function fillProducts(){
       const opts = ['<option value="">– válassz –</option>'].concat(
         products.map(p=>`<option value="${p.id}">${p.sku? esc(p.sku)+' – ' : ''}${esc(p.name)}</option>`) 
       ).join('');
       $('#in-product').innerHTML = opts;
       $('#out-product').innerHTML = opts;
+
       const setUnit = (sel, unitSel)=>{
         sel.addEventListener('change', ()=>{
           const p = getProduct(sel.value);
@@ -463,6 +548,7 @@
       setUnit($('#in-product'), $('#in-unit'));
       setUnit($('#out-product'), $('#out-unit'));
     }
+
     function fillPartners(){
       $('#in-supplier').innerHTML = ['<option value="">– válassz –</option>'].concat(
         suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`)
@@ -471,19 +557,21 @@
         customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`)
       ).join('');
     }
+
     async function delDoc(col, id){
       try { await deleteDoc(doc(db, col, id)); } catch(e){ showErr('Törlés hiba: '+(e?.message||e)); }
     }
+
     function getProduct(id){ return products.find(p=>p.id===id); }
     function getSupplier(id){ return suppliers.find(s=>s.id===id); }
     function getCustomer(id){ return customers.find(c=>c.id===id); }
+
     function showErr(msg){ const e=$('#err'); e.textContent=msg; e.classList.remove('hide'); }
     function hideErr(){ $('#err').classList.add('hide'); }
+
     // UX hint
     $('#in-hint').textContent = 'Tipp: a mértékegység a termék egységét követi';
     $('#out-hint').textContent = 'Negatív készlet kiadásnál tiltva';
-    // HTML escape
-    function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));}
   </script>
 </body>
 </html>
