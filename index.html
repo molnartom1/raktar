@@ -219,8 +219,12 @@
     <!-- Készlet -->
     <section id="tab-keszlet" class="grid hide">
       <div class="card">
-        <h2>Raktárkészlet</h2>
-        <div class="tablewrap" style="overflow:auto">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <h2 style="margin:0">Raktárkészlet</h2>
+          <!-- Export gomb: Raktárkészlet -->
+          <button id="export-stock" class="btn secondary" type="button" title="Raktárkészlet exportálása CSV-be">Export CSV</button>
+        </div>
+        <div class="tablewrap" style="overflow:auto; margin-top:8px">
           <table>
             <thead>
               <tr><th>Termék</th><th>Cikkszám</th><th>Készlet</th><th>ME</th><th>Min. készlet</th></tr>
@@ -254,8 +258,12 @@
       </div>
 
       <div class="card">
-        <h3>Összes mozgás</h3>
-        <div class="tablewrap" style="overflow:auto">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <h3 style="margin:0">Összes mozgás</h3>
+          <!-- ÚJ: Export gomb az Összes mozgáshoz (szűrt adatokból) -->
+          <button id="export-all" class="btn secondary" type="button" title="Összes mozgás exportálása CSV-be (szűrés alkalmazva)">Export CSV</button>
+        </div>
+        <div class="tablewrap" style="overflow:auto; margin-top:8px">
           <table>
             <thead>
               <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
@@ -855,6 +863,10 @@
         : `<span class="type-badge type-out"><span class="dot"></span>Kiadás</span>`;
     }
 
+    function typeLabel(type){
+      return type==='in' ? 'Bevét' : 'Kiadás';
+    }
+
     function dateFilter(stamp, from, to) {
       if(from && stamp < from) return false;
       if(to && stamp > to) return false;
@@ -912,17 +924,14 @@
       renderFilteredAllMovements();
     });
 
-    function renderFilteredAllMovements() {
+    function getFilteredAllMovements() {
       const filterType = document.getElementById('all-filter-type').value;
       const filterFrom = document.getElementById('all-filter-from').value;
       const filterTo = document.getElementById('all-filter-to').value;
       const filterProduct = document.getElementById('all-filter-product').value.trim().toLowerCase();
       const filterPartner = document.getElementById('all-filter-partner').value.trim().toLowerCase();
 
-      const tbodyAll = document.getElementById('tbody-all');
-      tbodyAll.innerHTML = '';
-
-      movements.filter(m => {
+      return movements.filter(m => {
         if(filterType && m.type !== filterType) return false;
         const dateStr = m.stamp ? m.stamp.slice(0,10) : '';
         if(!dateFilter(dateStr, filterFrom, filterTo)) return false;
@@ -933,7 +942,13 @@
         const partnerName = m.type === 'in' ? partnerNameIn : partnerNameOut;
         if(filterPartner && !partnerName.includes(filterPartner)) return false;
         return true;
-      }).forEach(m => {
+      });
+    }
+
+    function renderFilteredAllMovements() {
+      const tbodyAll = document.getElementById('tbody-all');
+      tbodyAll.innerHTML = '';
+      getFilteredAllMovements().forEach(m => {
         const p = getProduct(m.productId);
         const partner = m.type === 'in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
         const tr = document.createElement('tr');
@@ -995,6 +1010,88 @@
     function getSupplier(id){ return suppliers.find(s=>s.id===id); }
     function getCustomer(id){ return customers.find(c=>c.id===id); }
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
+
+    /* ====== Raktárkészlet CSV export ====== */
+    const exportBtn = document.getElementById('export-stock');
+    if(exportBtn){
+      exportBtn.addEventListener('click', ()=>{
+        try{
+          const csv = buildStockCsv();
+          downloadCsv(csv, 'raktarkeszlet');
+        }catch(e){
+          showErr('CSV exportálás hiba: ' + (e?.message || e));
+        }
+      });
+    }
+
+    function buildStockCsv(){
+      const header = ['Termék','Cikkszám','Készlet','ME','Min. készlet'];
+      const rows = [];
+      const map = stockMap();
+      products.forEach(p=>{
+        const qty = map.get(p.id) || 0;
+        rows.push([ p.name || '', p.sku || '', String(qty), p.unit || 'db', String(p.min ?? 0) ]);
+      });
+      return toCsv([header, ...rows], ';');
+    }
+
+    /* ====== ÚJ: Összes mozgás CSV export (szűrve) ====== */
+    const exportAllBtn = document.getElementById('export-all');
+    if(exportAllBtn){
+      exportAllBtn.addEventListener('click', ()=>{
+        try{
+          const csv = buildAllCsvFromFilters();
+          downloadCsv(csv, 'osszes_mozgas');
+        }catch(e){
+          showErr('CSV exportálás hiba: ' + (e?.message || e));
+        }
+      });
+    }
+
+    function buildAllCsvFromFilters(){
+      const header = ['Dátum','Típus','Termék','Mennyiség','Partner','Megjegyzés'];
+      const rows = getFilteredAllMovements().map(m=>{
+        const p = getProduct(m.productId);
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
+        const unit = m.unit || p?.unit || 'db';
+        return [
+          m.stamp || '',
+          typeLabel(m.type),
+          p ? p.name : m.productId,
+          `${String(m.qty)} ${unit}`,
+          partner ? partner.name : '',
+          m.note || ''
+        ];
+      });
+      return toCsv([header, ...rows], ';');
+    }
+
+    /* ====== Közös letöltő & CSV util ====== */
+    function downloadCsv(csvString, baseName){
+      const bom = "\uFEFF"; // UTF-8 BOM a magyar ékezetekhez
+      const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      a.href = url;
+      a.download = `${baseName}_${d.toISOString().slice(0,10)}_${hh}${mm}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function toCsv(rows, sep=','){
+      return rows.map(r=> r.map(cell=>{
+        const s = String(cell ?? '');
+        const needQuote = s.includes(sep) || s.includes('"') || s.includes('\n');
+        const escaped = s.replace(/"/g,'""');
+        return needQuote ? `"${escaped}"` : escaped;
+      }).join(sep)).join('\n');
+    }
+    /* ====== /CSV export ====== */
   </script>
 </body>
 </html>
