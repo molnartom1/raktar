@@ -28,8 +28,11 @@
     .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--accent)}
     .btn.ghost{background:#fff;border-color:var(--line);color:#0f172a}
+    /* NINCS fekete kiemelés/fókuszkeret a gombok körül */
+    .btn:focus, .btn:focus-visible, .tabbtn:focus, .tabbtn:focus-visible { outline:none; box-shadow:none; }
+
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:640px}
-    thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line);z-index:1}
+    thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line);z-index:1;user-select:none}
     td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
     tbody tr.low{background:#fff1f2}
     .tools button{font-size:12px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc;cursor:pointer}
@@ -68,10 +71,8 @@
     .modal footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
     .btn.bad{border-color:var(--warn);background:var(--warn)}
     .btn.good{border-color:var(--ok);background:var(--ok)}
-    .btn.ghost-danger{background:#fff;border-color:var(--warn);color:#var(--warn)}
-    .modal footer .btn.ghost-danger { color: var(--warn) !important; background:#fff; border-color:var(--warn); }
-    /* Fejléces Mégse/Bezárás gomb elrejtése a modálban */
-    .modal header #modal-close { display: none !important; }
+    .btn.ghost-danger{background:#fff;border-color:var(--warn);color:var(--warn)}
+
     /* Snackbar (Undo) */
     .snackbar{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#111827;color:#fff;padding:12px 14px;border-radius:12px;display:none;align-items:center;gap:12px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.25)}
     .snackbar .undo{background:#fff;border:0;border-radius:10px;padding:8px 10px;cursor:pointer}
@@ -82,6 +83,10 @@
     /* Veszélyzóna */
     .danger{border:1px solid #fecaca;background:#fff1f2}
     .danger h2{color:#991b1b}
+
+    /* Rendezhető táblafej stílus a készletnél */
+    .th-sortable{cursor:pointer}
+    .th-sortable .arrow{font-size:11px; margin-left:6px; color:var(--muted)}
   </style>
 </head>
 <body>
@@ -90,7 +95,6 @@
       <h1>Egyszerű készletkezelő</h1>
       <div class="row">
         <div class="tag">Firebase szinkron</div>
-        <!-- (ÁTHELYEZVE) Biztonsági export gomb kikerült a fejlécből -->
       </div>
     </header>
 
@@ -163,7 +167,6 @@
             <tbody id="tbody-in"></tbody>
           </table>
         </div>
-        <!-- Lapozás a bevétekhez -->
         <div class="pager">
           <button id="in-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="in-pageinfo">1 / 1</span>
@@ -232,7 +235,6 @@
             <tbody id="tbody-out"></tbody>
           </table>
         </div>
-        <!-- Lapozás a kiadásokhoz -->
         <div class="pager">
           <button id="out-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="out-pageinfo">1 / 1</span>
@@ -253,7 +255,11 @@
         <div class="tablewrap" style="margin-top:8px">
           <table>
             <thead>
-              <tr><th>Termék</th><th>Cikkszám</th><th>Készlet</th><th>ME</th><th>Min. készlet</th></tr>
+              <tr>
+                <th id="th-stock-name" class="th-sortable">Termék <span class="arrow" id="arrow-name">▲</span></th>
+                <th id="th-stock-sku"  class="th-sortable">Cikkszám <span class="arrow" id="arrow-sku"> </span></th>
+                <th>Készlet</th><th>ME</th><th>Min. készlet</th>
+              </tr>
             </thead>
             <tbody id="tbody-stock"></tbody>
           </table>
@@ -313,7 +319,7 @@
 
     <!-- Törzsadatok -->
     <section id="tab-torzs" class="grid grid-3 hide">
-      <!-- ÚJ KÁRTYA: Biztonsági mentés & visszaállítás -->
+      <!-- Biztonsági mentés & visszaállítás -->
       <div class="card" style="grid-column:1/-1">
         <h2>Biztonsági mentés & visszaállítás</h2>
         <p class="muted">A mentés a teljes adatbázist tartalmazó JSON-t készít. A visszaállítás a jelenlegi adatok törlésével jár.</p>
@@ -339,6 +345,11 @@
             <tbody id="tbody-sup"></tbody>
           </table>
         </div>
+        <div class="pager">
+          <button id="sup-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="sup-pageinfo">1 / 1</span>
+          <button id="sup-next" class="btn ghost" type="button">Következő ▶</button>
+        </div>
       </div>
 
       <div class="card">
@@ -355,6 +366,11 @@
             <thead><tr><th>Név</th><th class="tools">Művelet</th></tr></thead>
             <tbody id="tbody-cus"></tbody>
           </table>
+        </div>
+        <div class="pager">
+          <button id="cus-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="cus-pageinfo">1 / 1</span>
+          <button id="cus-next" class="btn ghost" type="button">Következő ▶</button>
         </div>
       </div>
 
@@ -383,9 +399,13 @@
             <tbody id="tbody-prod"></tbody>
           </table>
         </div>
+        <div class="pager">
+          <button id="prod-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="prod-pageinfo">1 / 1</span>
+          <button id="prod-next" class="btn ghost" type="button">Következő ▶</button>
+        </div>
       </div>
 
-      <!-- Veszélyzóna -->
       <div class="card danger" style="grid-column:1/-1">
         <h2>Veszélyzóna</h2>
         <p class="muted">A gomb az <b>összes adatot</b> törli: beszállítók, megrendelők, termékek, mozgások. A művelet nem visszavonható.</p>
@@ -454,7 +474,7 @@
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, getDocs, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
@@ -488,7 +508,7 @@
     onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); });
     onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ 
-      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()})); 
       renderMovements();
       inPage = 1; outPage = 1;
       renderFilteredMovements();
@@ -533,7 +553,100 @@
       }catch(err){ showErr('Termék mentése sikertelen: ' + (err?.message||err)); }
     });
 
-    /* ======= Többsoros bevét/kiadás UI ======= */
+    /* ====== Modális + Undo (változatlan működés) ====== */
+    const modalBackdrop = document.getElementById('confirm-backdrop');
+    const modalOk = document.getElementById('modal-ok');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalClose = document.getElementById('modal-close');
+    const modalMsg = document.getElementById('modal-message');
+    const modalSum = document.getElementById('modal-summary');
+    const modalList = document.getElementById('modal-list');
+    const modalGuard = document.getElementById('modal-guard');
+    const modalInput = document.getElementById('modal-input');
+    const guardTextEl = document.getElementById('guard-text');
+
+    function openConfirm({ title, message, summary, items, requireText }){
+      const titleEl = document.getElementById('modal-title');
+      titleEl.textContent = title || 'Művelet megerősítése';
+      modalMsg.textContent = message || '';
+      modalSum.textContent = summary || '';
+      modalList.innerHTML = '';
+      (items||[]).forEach(t=>{
+        const li=document.createElement('li'); li.textContent=t; modalList.appendChild(li);
+      });
+
+      if(requireText){
+        guardTextEl.textContent = requireText;
+        modalInput.value = '';
+        modalGuard.classList.remove('hide');
+        modalOk.disabled = true;
+        const onInput = ()=>{ modalOk.disabled = modalInput.value.trim() !== requireText; };
+        modalInput.removeEventListener('input', modalInput._handler || (()=>{}));
+        modalInput._handler = onInput;
+        modalInput.addEventListener('input', onInput);
+      }else{
+        modalGuard.classList.add('hide');
+        modalOk.disabled = false;
+      }
+
+      return new Promise(resolve=>{
+        const onOk = ()=>{ cleanup(); resolve(true); };
+        const onCancel = ()=>{ cleanup(); resolve(false); };
+        function onKey(e){ if(e.key==='Escape'){ onCancel(); } if(e.key==='Enter' && !modalOk.disabled){ onOk(); } }
+        function cleanup(){
+          modalBackdrop.style.display='none';
+          modalOk.removeEventListener('click', onOk);
+          modalCancel.removeEventListener('click', onCancel);
+          if (modalClose) modalClose.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKey);
+          if(requireText){ modalInput.removeEventListener('input', modalInput._handler || (()=>{})); }
+        }
+        modalBackdrop.style.display='flex';
+        modalOk.addEventListener('click', onOk);
+        modalCancel.addEventListener('click', onCancel);
+        if (modalClose) modalClose.addEventListener('click', onCancel);
+        setTimeout(()=> document.addEventListener('keydown', onKey), 0);
+      });
+    }
+
+    // Snackbar (Undo)
+    const snackbar = document.getElementById('snackbar');
+    const snackText = document.getElementById('snack-text');
+    const snackUndoBtn = document.getElementById('snack-undo');
+    let snackTimer = null;
+    let lastInsert = null;
+
+    function showSnack(text, onUndo){
+      snackText.textContent = text || 'Rögzítve.';
+      snackbar.querySelector('.timer > div').style.animation='none';
+      void snackbar.offsetWidth;
+      snackbar.querySelector('.timer > div').style.animation='';
+      snackbar.style.display='flex';
+      clearTimeout(snackTimer);
+      snackUndoBtn.onclick = ()=>{
+        clearTimeout(snackTimer);
+        snackbar.style.display='none';
+        onUndo?.();
+      };
+      snackTimer = setTimeout(()=>{ snackbar.style.display='none'; }, 10000);
+    }
+
+    async function undoLast(){
+      if(!lastInsert || !lastInsert.ids?.length) return;
+      try{
+        const batch = writeBatch(db);
+        lastInsert.ids.forEach(id=>{
+          batch.delete(doc(collection(db, COL_MOVEMENTS), id));
+        });
+        await batch.commit();
+      }catch(e){
+        showErr('Visszavonás hiba: '+(e?.message||e));
+        return;
+      }
+      lastInsert = null;
+    }
+
+    /* ====== Bevét/Kiadás sorok (változatlan) ====== */
     const inRowsTbody = document.getElementById('tbody-in-rows');
     const outRowsTbody = document.getElementById('tbody-out-rows');
     document.getElementById('in-add-row').addEventListener('click', ()=> addLineRow(inRowsTbody, 'in'));
@@ -585,313 +698,7 @@
       (type==='in' ? document.getElementById('in-sum') : document.getElementById('out-sum')).textContent = `Összes mennyiség: ${fmt.format(sum)}`;
     }
 
-    /* ====== Saját modális + Undo ====== */
-    const modalBackdrop = document.getElementById('confirm-backdrop');
-    const modalOk = document.getElementById('modal-ok');
-    const modalCancel = document.getElementById('modal-cancel');
-    const modalClose = document.getElementById('modal-close');
-    const modalMsg = document.getElementById('modal-message');
-    const modalSum = document.getElementById('modal-summary');
-    const modalList = document.getElementById('modal-list');
-    const modalGuard = document.getElementById('modal-guard');
-    const modalInput = document.getElementById('modal-input');
-    const guardTextEl = document.getElementById('guard-text');
-
-    function openConfirm({ title, message, summary, items, requireText }){
-      const titleEl = document.getElementById('modal-title');
-      titleEl.textContent = title || 'Művelet megerősítése';
-      modalMsg.textContent = message || '';
-      modalSum.textContent = summary || '';
-      modalList.innerHTML = '';
-      (items||[]).forEach(t=>{
-        const li=document.createElement('li'); li.textContent=t; modalList.appendChild(li);
-      });
-
-      if(requireText){
-        guardTextEl.textContent = requireText;
-        modalInput.value = '';
-        modalGuard.classList.remove('hide');
-        modalOk.disabled = true;
-        const onInput = ()=>{ modalOk.disabled = modalInput.value.trim() !== requireText; };
-        modalInput.removeEventListener('input', modalInput._handler || (()=>{}));
-        modalInput._handler = onInput;
-        modalInput.addEventListener('input', onInput);
-      }else{
-        modalGuard.classList.add('hide');
-        modalOk.disabled = false;
-      }
-
-      return new Promise(resolve=>{
-        const onOk = ()=>{ cleanup(); resolve(true); };
-        const onCancel = ()=>{ cleanup(); resolve(false); };
-        function onKey(e){ if(e.key==='Escape'){ onCancel(); } if(e.key==='Enter' && !modalOk.disabled){ onOk(); } }
-        function cleanup(){
-          modalBackdrop.style.display='none';
-          modalOk.removeEventListener('click', onOk);
-          modalCancel.removeEventListener('click', onCancel);
-          modalClose.removeEventListener('click', onCancel);
-          document.removeEventListener('keydown', onKey);
-          if(requireText){ modalInput.removeEventListener('input', modalInput._handler || (()=>{})); }
-        }
-        modalBackdrop.style.display='flex';
-        modalOk.addEventListener('click', onOk);
-        modalCancel.addEventListener('click', onCancel);
-        modalClose.addEventListener('click', onCancel);
-        setTimeout(()=> document.addEventListener('keydown', onKey), 0);
-      });
-    }
-
-    function collectRowsFor(type){
-      const tbody = type==='in' ? inRowsTbody : outRowsTbody;
-      const rows = Array.from(tbody.querySelectorAll('tr')).map(tr=>({
-        productId: tr.querySelector('.li-product').value,
-        qty: Number(tr.querySelector('.li-qty').value||0),
-        unit: (tr.querySelector('.li-unit').value||'').trim(),
-        note: tr.querySelector('.li-note').value.trim(),
-      })).filter(r=> r.productId && r.qty>0);
-      const sum = rows.reduce((s,r)=> s + (Number(r.qty)||0), 0);
-      const names = rows.map(r => getProduct(r.productId)?.name || r.productId);
-      return { rows, sum, names };
-    }
-
-    // Snackbar (Undo)
-    const snackbar = document.getElementById('snackbar');
-    const snackText = document.getElementById('snack-text');
-    const snackUndoBtn = document.getElementById('snack-undo');
-    let snackTimer = null;
-    let lastInsert = null; // { ids:[], type:'in'|'out' }
-
-    function showSnack(text, onUndo){
-      snackText.textContent = text || 'Rögzítve.';
-      snackbar.querySelector('.timer > div').style.animation='none';
-      void snackbar.offsetWidth;
-      snackbar.querySelector('.timer > div').style.animation='';
-      snackbar.style.display='flex';
-      clearTimeout(snackTimer);
-      snackUndoBtn.onclick = ()=>{
-        clearTimeout(snackTimer);
-        snackbar.style.display='none';
-        onUndo?.();
-      };
-      snackTimer = setTimeout(()=>{ snackbar.style.display='none'; }, 10000);
-    }
-
-    async function undoLast(){
-      if(!lastInsert || !lastInsert.ids?.length) return;
-      try{
-        const batch = writeBatch(db);
-        lastInsert.ids.forEach(id=>{
-          batch.delete(doc(collection(db, COL_MOVEMENTS), id));
-        });
-        await batch.commit();
-      }catch(e){
-        showErr('Visszavonás hiba: '+(e?.message||e));
-        return;
-      }
-      lastInsert = null;
-    }
-
-    document.getElementById('in-submit').addEventListener('click', async ()=>{
-      const partnerId = document.getElementById('in-supplier').value;
-      const date = document.getElementById('in-date').value;
-      const { rows, sum, names } = collectRowsFor('in');
-      if(!partnerId) return showErr('Válassz beszállítót!');
-      if(!date) return showErr('Válassz dátumot!');
-      if(!rows.length) return showErr('Adj meg legalább egy sort!');
-      const ok = await openConfirm({
-        title: 'Bevét rögzítése',
-        message: 'Biztosan rögzíted a bevételt?',
-        summary: `Sorok: ${rows.length} • Összes mennyiség: ${fmt.format(sum)} • Dátum: ${date}`,
-        items: names.slice(0,3)
-      });
-      if(ok) await submitMultiWithUndo('in');
-    });
-
-    document.getElementById('out-submit').addEventListener('click', async ()=>{
-      const partnerId = document.getElementById('out-customer').value;
-      const date = document.getElementById('out-date').value;
-      const { rows, sum, names } = collectRowsFor('out');
-      if(!partnerId) return showErr('Válassz megrendelőt!');
-      if(!date) return showErr('Válassz dátumot!');
-      if(!rows.length) return showErr('Adj meg legalább egy sort!');
-      const ok = await openConfirm({
-        title: 'Kiadás rögzítése',
-        message: 'Biztosan rögzíted a kiadást?',
-        summary: `Sorok: ${rows.length} • Összes mennyiség: ${fmt.format(sum)} • Dátum: ${date}`,
-        items: names.slice(0,3)
-      });
-      if(ok) await submitMultiWithUndo('out');
-    });
-
-    // submitMulti kiegészítése Undo-hoz
-    async function submitMultiWithUndo(type){
-      hideErr();
-      const partnerId = type==='in' ? document.getElementById('in-supplier').value : document.getElementById('out-customer').value;
-      const globalNote = type==='in' ? document.getElementById('in-note').value.trim() : document.getElementById('out-note').value.trim();
-      const date = type==='in' ? document.getElementById('in-date').value : document.getElementById('out-date').value;
-      const tbody = type==='in' ? inRowsTbody : outRowsTbody;
-
-      const rows = Array.from(tbody.querySelectorAll('tr')).map(tr=>({
-        productId: tr.querySelector('.li-product').value,
-        qty: Number(tr.querySelector('.li-qty').value||0),
-        unit: (tr.querySelector('.li-unit').value||'').trim(),
-        note: tr.querySelector('.li-note').value.trim(),
-      })).filter(r=> r.productId && r.qty>0);
-      rows.forEach(r=>{ if(!r.unit){ const p=getProduct(r.productId); r.unit = p?.unit || 'db'; } });
-
-      if(type==='out'){
-        const requested = new Map();
-        for(const r of rows){ requested.set(r.productId, (requested.get(r.productId)||0) + r.qty); }
-        const stock = stockMap();
-        for(const [pid, q] of requested.entries()){
-          const available = stock.get(pid) || 0;
-          if(q > available){ const p = getProduct(pid); return showErr(`Nincs elegendő készlet: ${p?.name||pid}. Kért: ${q}, Elérhető: ${available}`); }
-        }
-      }
-
-      let idsJustInserted = [];
-      try{
-        const batch = writeBatch(db);
-        for(const r of rows){
-          const ref = doc(collection(db, COL_MOVEMENTS));
-          idsJustInserted.push(ref.id);
-          batch.set(ref, {
-            type,
-            productId: r.productId,
-            qty: r.qty,
-            unit: r.unit,
-            partnerId,
-            note: r.note || globalNote || '',
-            ts: serverTimestamp(),
-            stamp: date,
-          });
-        }
-        await batch.commit();
-      }catch(e){ return showErr('Hiba (többsoros mentés): '+(e?.message||e)); }
-
-      tbody.innerHTML='';
-      addLineRow(tbody, type);
-      (type==='in' ? document.getElementById('in-note') : document.getElementById('out-note')).value='';
-
-      lastInsert = { ids: idsJustInserted, type };
-      showSnack(type==='in' ? 'Bevét rögzítve.' : 'Kiadás rögzítve.', async ()=>{ await undoLast(); });
-    }
-
-    // ====== (Eredeti) submitMulti megmarad (nem hívjuk közvetlenül) ======
-    async function submitMulti(type){
-      hideErr();
-      const partnerId = type==='in' ? document.getElementById('in-supplier').value : document.getElementById('out-customer').value;
-      const globalNote = type==='in' ? document.getElementById('in-note').value.trim() : document.getElementById('out-note').value.trim();
-      const date = type==='in' ? document.getElementById('in-date').value : document.getElementById('out-date').value;
-      if(!partnerId) return showErr(type==='in' ? 'Válassz beszállítót!' : 'Válassz megrendelőt!');
-      if(!date) return showErr('Válassz dátumot!');
-      const tbody = type==='in' ? inRowsTbody : outRowsTbody;
-      const rows = Array.from(tbody.querySelectorAll('tr')).map(tr=>({
-        productId: tr.querySelector('.li-product').value,
-        qty: Number(tr.querySelector('.li-qty').value||0),
-        unit: (tr.querySelector('.li-unit').value||'').trim(),
-        note: tr.querySelector('.li-note').value.trim(),
-      })).filter(r=> r.productId && r.qty>0);
-      if(!rows.length) return showErr('Adj meg legalább egy sort!');
-      rows.forEach(r=>{ if(!r.unit){ const p=getProduct(r.productId); r.unit = p?.unit || 'db'; } });
-      if(type==='out'){
-        const requested = new Map();
-        for(const r of rows){ requested.set(r.productId, (requested.get(r.productId)||0) + r.qty); }
-        const stock = stockMap();
-        for(const [pid, q] of requested.entries()){
-          const available = stock.get(pid) || 0;
-          if(q > available){ const p = getProduct(pid); return showErr(`Nincs elegendő készlet: ${p?.name||pid}. Kért: ${q}, Elérhető: ${available}`); }
-        }
-      }
-      try{
-        const batch = writeBatch(db);
-        for(const r of rows){
-          const ref = doc(collection(db, COL_MOVEMENTS));
-          batch.set(ref, {
-            type,
-            productId: r.productId,
-            qty: r.qty,
-            unit: r.unit,
-            partnerId,
-            note: r.note || globalNote || '',
-            ts: serverTimestamp(),
-            stamp: date,
-          });
-        }
-        await batch.commit();
-      }catch(e){ return showErr('Hiba (többsoros mentés): '+(e?.message||e)); }
-      tbody.innerHTML='';
-      addLineRow(tbody, type);
-      (type==='in' ? document.getElementById('in-note') : document.getElementById('out-note')).value='';
-    }
-
-    /* ====== Teljes adatbázis törlés ====== */
-    document.getElementById('wipe-all').addEventListener('click', async ()=>{
-      const ok = await openConfirm({
-        title: 'Teljes adatbázis törlése',
-        message: 'Biztosan törlöd az ÖSSZES adatot? A művelet nem visszavonható.',
-        summary: 'Érintett kollekciók: beszállítók, megrendelők, termékek, mozgások.',
-        items: ['A törlés nagy mennyiségű művelet lehet.'],
-        requireText: 'TÖRLÉS'
-      });
-      if(!ok) return;
-
-      try{
-        await wipeCollection(COL_MOVEMENTS);
-        await wipeCollection(COL_PRODUCTS);
-        await wipeCollection(COL_SUPPLIERS);
-        await wipeCollection(COL_CUSTOMERS);
-        showSnack('Adatbázis törölve.');
-      }catch(e){
-        showErr('Törlés hiba: ' + (e?.message || e));
-      }
-    });
-
-    async function wipeCollection(colName){
-      while(true){
-        const snap = await getDocs(collection(db, colName));
-        if(snap.empty) break;
-        const ids = snap.docs.map(d=>d.id);
-        const chunkSize = 400;
-        for(let i=0;i<ids.length;i+=chunkSize){
-          const batch = writeBatch(db);
-          ids.slice(i,i+chunkSize).forEach(id=>{
-            batch.delete(doc(collection(db, colName), id));
-          });
-          await batch.commit();
-        }
-      }
-    }
-
-    /* ====== Listák renderelése (teljes) ====== */
-    function renderSuppliers(){
-      const tb = document.getElementById('tbody-sup'); tb.innerHTML='';
-      suppliers.forEach(s=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${esc(s.name)}</td><td class="tools"><button data-id="${s.id}" data-col="${COL_SUPPLIERS}">Törlés</button></td>`;
-        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_SUPPLIERS, s.id));
-        tb.appendChild(tr);
-      });
-    }
-    function renderCustomers(){
-      const tb = document.getElementById('tbody-cus'); tb.innerHTML='';
-      customers.forEach(c=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${esc(c.name)}</td><td class="tools"><button data-id="${c.id}" data-col="${COL_CUSTOMERS}">Törlés</button></td>`;
-        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_CUSTOMERS, c.id));
-        tb.appendChild(tr);
-      });
-    }
-    function renderProducts(){
-      const tb = document.getElementById('tbody-prod'); tb.innerHTML='';
-      products.forEach(p=>{
-        const details = [p.sku||'', p.unit?`ME: ${p.unit}`:'', (p.min||0)>0?`min: ${p.min}`:''].filter(Boolean).join(' • ');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${esc(p.name)}</td><td class="muted">${esc(details)}</td><td class="tools"><button data-id="${p.id}" data-col="${COL_PRODUCTS}">Törlés</button></td>`;
-        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_PRODUCTS, p.id));
-        tb.appendChild(tr);
-      });
-    }
+    /* ====== Renderelés (mozgások) ====== */
     function renderMovements(){
       const tbAll = document.getElementById('tbody-all'); tbAll.innerHTML='';
       const tbIn = document.getElementById('tbody-in'); tbIn.innerHTML='';
@@ -925,6 +732,11 @@
     let allPage   = 1, allPageSize   = 20;
     let inPage    = 1, inPageSize    = 20;
     let outPage   = 1, outPageSize   = 20;
+
+    /* ÚJ: törzsadat lapozások (10 sor/oldal) */
+    let supPage = 1, supPageSize = 10;
+    let cusPage = 1, cusPageSize = 10;
+    let prodPage = 1, prodPageSize = 10;
 
     /* ====== Bevét/Kiadás szűrt + lapozott render ====== */
     function renderFilteredMovements() {
@@ -1066,16 +878,37 @@
       document.getElementById('all-next').disabled = (allPage>=totalPages);
     }
 
-    /* ====== Készlet lapozás ====== */
+    /* ====== Raktárkészlet: rendezés + lapozás ====== */
+    document.getElementById('th-stock-name').addEventListener('click', ()=>{ stockSort.key='name'; stockSort.dir = stockSort.key==='name' ? -stockSort.dir : 1; updateStockArrows(); renderStock(); });
+    document.getElementById('th-stock-sku').addEventListener('click', ()=>{ stockSort.key='sku';  stockSort.dir = stockSort.key==='sku'  ? -stockSort.dir : 1; updateStockArrows(); renderStock(); });
+
+    let stockSort = { key: 'name', dir: 1 }; // 1=ASC, -1=DESC
+
+    function updateStockArrows(){
+      const arrowName = document.getElementById('arrow-name');
+      const arrowSku  = document.getElementById('arrow-sku');
+      arrowName.textContent = stockSort.key==='name' ? (stockSort.dir===1?'▲':'▼') : ' ';
+      arrowSku.textContent  = stockSort.key==='sku'  ? (stockSort.dir===1?'▲':'▼') : ' ';
+    }
+
     document.getElementById('stock-prev').addEventListener('click', ()=>{ stockPage = Math.max(1, stockPage-1); renderStock(); });
     document.getElementById('stock-next').addEventListener('click', ()=>{ stockPage += 1; renderStock(); });
 
     function renderStock(){
       const tb = document.getElementById('tbody-stock'); tb.innerHTML='';
       const map = stockMap();
-      const rows = products.map(p=>{
+      let rows = products.map(p=>{
         const qty = map.get(p.id) || 0;
         return { p, qty };
+      });
+
+      // Rendezés terméknév / cikkszám szerint
+      rows.sort((a,b)=>{
+        const A = (stockSort.key==='name' ? (a.p.name||'') : (a.p.sku||'')).toString().toLowerCase();
+        const B = (stockSort.key==='name' ? (b.p.name||'') : (b.p.sku||'')).toString().toLowerCase();
+        if (A < B) return -1 * stockSort.dir;
+        if (A > B) return  1 * stockSort.dir;
+        return 0;
       });
 
       const totalPages = Math.max(1, Math.ceil(rows.length / stockPageSize));
@@ -1104,6 +937,67 @@
       return m;
     }
 
+    /* ====== Törzsadatok: lapozott render ====== */
+    function renderSuppliers(){
+      const tb = document.getElementById('tbody-sup'); tb.innerHTML='';
+      const total = suppliers.length;
+      const totalPages = Math.max(1, Math.ceil(total / supPageSize));
+      supPage = Math.min(supPage, totalPages);
+      const start = (supPage-1) * supPageSize;
+      suppliers.slice(start, start+supPageSize).forEach(s=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(s.name)}</td><td class="tools"><button data-id="${s.id}" data-col="${COL_SUPPLIERS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_SUPPLIERS, s.id));
+        tb.appendChild(tr);
+      });
+      document.getElementById('sup-pageinfo').textContent = `${supPage} / ${totalPages}`;
+      document.getElementById('sup-prev').disabled = (supPage<=1);
+      document.getElementById('sup-next').disabled = (supPage>=totalPages);
+    }
+
+    function renderCustomers(){
+      const tb = document.getElementById('tbody-cus'); tb.innerHTML='';
+      const total = customers.length;
+      const totalPages = Math.max(1, Math.ceil(total / cusPageSize));
+      cusPage = Math.min(cusPage, totalPages);
+      const start = (cusPage-1) * cusPageSize;
+      customers.slice(start, start+cusPageSize).forEach(c=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(c.name)}</td><td class="tools"><button data-id="${c.id}" data-col="${COL_CUSTOMERS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_CUSTOMERS, c.id));
+        tb.appendChild(tr);
+      });
+      document.getElementById('cus-pageinfo').textContent = `${cusPage} / ${totalPages}`;
+      document.getElementById('cus-prev').disabled = (cusPage<=1);
+      document.getElementById('cus-next').disabled = (cusPage>=totalPages);
+    }
+
+    function renderProducts(){
+      const tb = document.getElementById('tbody-prod'); tb.innerHTML='';
+      const total = products.length;
+      const totalPages = Math.max(1, Math.ceil(total / prodPageSize));
+      prodPage = Math.min(prodPage, totalPages);
+      const start = (prodPage-1) * prodPageSize;
+      products.slice(start, start+prodPageSize).forEach(p=>{
+        const details = [p.sku||'', p.unit?`ME: ${p.unit}`:'', (p.min||0)>0?`min: ${p.min}`:''].filter(Boolean).join(' • ');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${esc(p.name)}</td><td class="muted">${esc(details)}</td><td class="tools"><button data-id="${p.id}" data-col="${COL_PRODUCTS}">Törlés</button></td>`;
+        tr.querySelector('button').addEventListener('click', ()=>delDoc(COL_PRODUCTS, p.id));
+        tb.appendChild(tr);
+      });
+      document.getElementById('prod-pageinfo').textContent = `${prodPage} / ${totalPages}`;
+      document.getElementById('prod-prev').disabled = (prodPage<=1);
+      document.getElementById('prod-next').disabled = (prodPage>=totalPages);
+    }
+
+    // Törzsadat pager gombok
+    document.getElementById('sup-prev').addEventListener('click', ()=>{ supPage=Math.max(1, supPage-1); renderSuppliers(); });
+    document.getElementById('sup-next').addEventListener('click', ()=>{ supPage+=1; renderSuppliers(); });
+    document.getElementById('cus-prev').addEventListener('click', ()=>{ cusPage=Math.max(1, cusPage-1); renderCustomers(); });
+    document.getElementById('cus-next').addEventListener('click', ()=>{ cusPage+=1; renderCustomers(); });
+    document.getElementById('prod-prev').addEventListener('click', ()=>{ prodPage=Math.max(1, prodPage-1); renderProducts(); });
+    document.getElementById('prod-next').addEventListener('click', ()=>{ prodPage+=1; renderProducts(); });
+
     function fillProducts(){
       [...document.querySelectorAll('.li-product')].forEach(sel=>{
         const unitInput = sel.closest('tr').querySelector('.li-unit');
@@ -1130,9 +1024,7 @@
     function getCustomer(id){ return customers.find(c=>c.id===id); }
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
 
-    /* ====== Export / Import ====== */
-
-    // Raktárkészlet CSV
+    /* ====== Exportok (változatlanok) ====== */
     const exportBtn = document.getElementById('export-stock');
     if(exportBtn){
       exportBtn.addEventListener('click', ()=>{
@@ -1156,7 +1048,6 @@
       return toCsv([header, ...rows], ';');
     }
 
-    // Összes mozgás CSV (szűrten)
     const exportAllBtn = document.getElementById('export-all');
     if(exportAllBtn){
       exportAllBtn.addEventListener('click', ()=>{
@@ -1187,7 +1078,6 @@
       return toCsv([header, ...rows], ';');
     }
 
-    // Biztonsági mentés (JSON) – Törzsadat kártya
     document.getElementById('export-backup').addEventListener('click', ()=>{
       try{
         const backup = buildFullBackupJson();
@@ -1209,9 +1099,9 @@
       };
       return {
         exportedAt: new Date().toISOString(),
-        suppliers: suppliers.map(({id, ...rest})=>({ id, ...rest })),
-        customers: customers.map(({id, ...rest})=>({ id, ...rest })),
-        products:  products.map(({id, ...rest})=>({ id, ...rest })),
+        suppliers: suppliers.map(s=>({ id:s.id, ...s })),
+        customers: customers.map(c=>({ id:c.id, ...c })),
+        products:  products.map(p=>({ id:p.id, ...p })),
         movements: movements.map(m=>({
           id: m.id,
           type: m.type,
@@ -1226,15 +1116,9 @@
       };
     }
 
-    // Visszaállítás (JSON import) – Törzsadat kártya
     const importBtn = document.getElementById('import-backup');
     const importFile = document.getElementById('import-file');
-
-    importBtn.addEventListener('click', ()=>{
-      importFile.value = '';
-      importFile.click();
-    });
-
+    importBtn.addEventListener('click', ()=>{ importFile.value=''; importFile.click(); });
     importFile.addEventListener('change', async (e)=>{
       const file = e.target.files?.[0];
       if(!file) return;
@@ -1246,13 +1130,10 @@
         showErr('Hibás JSON fájl.');
         return;
       }
-
-      // Struktúra ellenőrzés
       if(!data || !Array.isArray(data.suppliers) || !Array.isArray(data.customers) || !Array.isArray(data.products) || !Array.isArray(data.movements)){
         showErr('A backup szerkezete érvénytelen. Szükséges kulcsok: suppliers, customers, products, movements.');
         return;
       }
-
       const ok = await openConfirm({
         title: 'Visszaállítás (JSON import)',
         message: 'A visszaállítás törli a jelenlegi adatokat és betölti a backup tartalmát.',
@@ -1263,18 +1144,14 @@
       if(!ok) return;
 
       try{
-        // 1) Törlés mindenből
         await wipeCollection(COL_MOVEMENTS);
         await wipeCollection(COL_PRODUCTS);
         await wipeCollection(COL_SUPPLIERS);
         await wipeCollection(COL_CUSTOMERS);
-
-        // 2) Import – azonosító megtartása (setDoc adott id-re)
         await batchImport(COL_SUPPLIERS, data.suppliers);
         await batchImport(COL_CUSTOMERS, data.customers);
         await batchImport(COL_PRODUCTS,  data.products);
         await batchImport(COL_MOVEMENTS, data.movements);
-
         showSnack('Visszaállítás kész. Az adatok frissültek.');
       }catch(err){
         showErr('Visszaállítás hiba: ' + (err?.message || err));
@@ -1289,16 +1166,31 @@
           const id = item.id || doc(collection(db, colName)).id;
           const copy = {...item};
           delete copy.id;
-          // Mozgásoknál a ts lehet ISO string -> vissza nem állítjuk szerverként, a stamp a fontos a riportokhoz
           batch.set(doc(collection(db, colName), id), copy);
         });
         await batch.commit();
       }
     }
 
+    async function wipeCollection(colName){
+      while(true){
+        const snap = await getDocs(collection(db, colName));
+        if(snap.empty) break;
+        const ids = snap.docs.map(d=>d.id);
+        const chunkSize = 400;
+        for(let i=0;i<ids.length;i+=chunkSize){
+          const batch = writeBatch(db);
+          ids.slice(i,i+chunkSize).forEach(id=>{
+            batch.delete(doc(collection(db, colName), id));
+          });
+          await batch.commit();
+        }
+      }
+    }
+
     /* ====== Közös letöltő & CSV util ====== */
     function downloadCsv(csvString, baseName){
-      const bom = "\uFEFF"; // UTF-8 BOM a magyar ékezetekhez
+      const bom = "\uFEFF";
       const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1336,7 +1228,6 @@
         return needQuote ? `"${escaped}"` : escaped;
       }).join(sep)).join('\n');
     }
-    /* ====== /Export-Import ====== */
   </script>
 </body>
 </html>
