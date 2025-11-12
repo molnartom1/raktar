@@ -27,9 +27,9 @@
     .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
     .btn.secondary{background:#fff;color:var(--accent)}
-    .btn.ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+    .btn.ghost{background:#fff;border-color:var(--line);color:#0f172a}
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:640px}
-    thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line)}
+    thead th{position:sticky;top:0;background:#f1f5f9;text-align:left;font-weight:600;font-size:13px;padding:10px;border-bottom:1px solid var(--line);z-index:1}
     td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
     tbody tr.low{background:#fff1f2}
     .tools button{font-size:12px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:#f8fafc;cursor:pointer}
@@ -37,6 +37,14 @@
     .error{background:#fee2e2;border:1px solid #fecaca;color:#7f1d1d;padding:10px;border-radius:12px}
     .hide{display:none}
     .inline-actions{display:flex;gap:6px}
+
+    /* Görgethető táblakonténer: sticky fejléchez max-height kell */
+    .tablewrap{overflow:auto; max-height:520px; border:1px solid var(--line); border-radius:12px;}
+
+    /* Pager */
+    .pager{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:8px}
+    .pager .btn{padding:8px 10px;border-radius:10px}
+    .pager .info{font-size:12px;color:var(--muted)}
 
     /* Típus jelvények */
     .type-badge{display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#fff}
@@ -78,7 +86,11 @@
   <div class="wrap">
     <header>
       <h1>Egyszerű készletkezelő</h1>
-      <div class="tag">Firebase szinkron</div>
+      <div class="row">
+        <div class="tag">Firebase szinkron</div>
+        <!-- ÚJ: Biztonsági export gomb (teljes adatbázis JSON) -->
+        <button id="export-backup" class="btn ghost" type="button" title="Teljes adatbázis biztonsági exportja (JSON)">Biztonsági export (JSON)</button>
+      </div>
     </header>
 
     <div class="tabs">
@@ -117,7 +129,7 @@
           <div class="muted" id="in-sum"></div>
         </div>
 
-        <div class="tablewrap" style="overflow:auto;margin-top:10px">
+        <div class="tablewrap" style="margin-top:10px">
           <table>
             <thead>
               <tr><th style="min-width:240px">Termék</th><th style="min-width:120px">Mennyiség</th><th style="min-width:100px">ME</th><th style="min-width:260px">Megjegyzés (soronként, opcionális)</th><th>Művelet</th></tr>
@@ -142,7 +154,7 @@
 
       <div class="card">
         <h3>Legutóbbi bevétek</h3>
-        <div class="tablewrap" style="overflow:auto">
+        <div class="tablewrap">
           <table>
             <thead>
               <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
@@ -180,7 +192,7 @@
           <div class="muted" id="out-sum"></div>
         </div>
 
-        <div class="tablewrap" style="overflow:auto;margin-top:10px">
+        <div class="tablewrap" style="margin-top:10px">
           <table>
             <thead>
               <tr><th style="min-width:240px">Termék</th><th style="min-width:120px">Mennyiség</th><th style="min-width:100px">ME</th><th style="min-width:260px">Megjegyzés (soronként, opcionális)</th><th>Művelet</th></tr>
@@ -205,7 +217,7 @@
 
       <div class="card">
         <h3>Legutóbbi kiadások</h3>
-        <div class="tablewrap" style="overflow:auto">
+        <div class="tablewrap">
           <table>
             <thead>
               <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
@@ -221,16 +233,23 @@
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center;">
           <h2 style="margin:0">Raktárkészlet</h2>
-          <!-- Export gomb: Raktárkészlet -->
-          <button id="export-stock" class="btn secondary" type="button" title="Raktárkészlet exportálása CSV-be">Export CSV</button>
+          <div class="row">
+            <button id="export-stock" class="btn secondary" type="button" title="Raktárkészlet exportálása CSV-be">Export CSV</button>
+          </div>
         </div>
-        <div class="tablewrap" style="overflow:auto; margin-top:8px">
+        <div class="tablewrap" style="margin-top:8px">
           <table>
             <thead>
               <tr><th>Termék</th><th>Cikkszám</th><th>Készlet</th><th>ME</th><th>Min. készlet</th></tr>
             </thead>
             <tbody id="tbody-stock"></tbody>
           </table>
+        </div>
+        <!-- ÚJ: lapozó a készlethez -->
+        <div class="pager">
+          <button id="stock-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="stock-pageinfo">1 / 1</span>
+          <button id="stock-next" class="btn ghost" type="button">Következő ▶</button>
         </div>
       </div>
 
@@ -260,16 +279,23 @@
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center;">
           <h3 style="margin:0">Összes mozgás</h3>
-          <!-- ÚJ: Export gomb az Összes mozgáshoz (szűrt adatokból) -->
-          <button id="export-all" class="btn secondary" type="button" title="Összes mozgás exportálása CSV-be (szűrés alkalmazva)">Export CSV</button>
+          <div class="row">
+            <button id="export-all" class="btn secondary" type="button" title="Összes mozgás exportálása CSV-be (szűrés alkalmazva)">Export CSV</button>
+          </div>
         </div>
-        <div class="tablewrap" style="overflow:auto; margin-top:8px">
+        <div class="tablewrap" style="margin-top:8px">
           <table>
             <thead>
               <tr><th>Dátum</th><th>Típus</th><th>Termék</th><th>Mennyiség</th><th>Partner</th><th>Megjegyzés</th></tr>
             </thead>
             <tbody id="tbody-all"></tbody>
           </table>
+        </div>
+        <!-- ÚJ: lapozó az összes mozgáshoz -->
+        <div class="pager">
+          <button id="all-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="all-pageinfo">1 / 1</span>
+          <button id="all-next" class="btn ghost" type="button">Következő ▶</button>
         </div>
       </div>
     </section>
@@ -285,7 +311,7 @@
           <input id="sup-note" placeholder="Megjegyzés" />
           <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
         </form>
-        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+        <div class="tablewrap" style="margin-top:12px">
           <table>
             <thead><tr><th>Név</th><th class="tools">Művelet</th></tr></thead>
             <tbody id="tbody-sup"></tbody>
@@ -302,7 +328,7 @@
           <input id="cus-note" placeholder="Megjegyzés" />
           <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
         </form>
-        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+        <div class="tablewrap" style="margin-top:12px">
           <table>
             <thead><tr><th>Név</th><th class="tools">Művelet</th></tr></thead>
             <tbody id="tbody-cus"></tbody>
@@ -329,7 +355,7 @@
           </div>
           <div class="row" style="margin-top:8px"><button class="btn" type="submit">Hozzáadás</button></div>
         </form>
-        <div class="tablewrap" style="overflow:auto;margin-top:12px">
+        <div class="tablewrap" style="margin-top:12px">
           <table>
             <thead><tr><th>Megnevezés</th><th>Részletek</th><th class="tools">Művelet</th></tr></thead>
             <tbody id="tbody-prod"></tbody>
@@ -346,7 +372,7 @@
     </section>
 
     <footer class="muted" style="text-align:center;margin-top:24px">
-      Készült: <span id="stamp"></span> 
+      Készült: <span id="stamp"></span>
     </footer>
   </div>
 
@@ -440,9 +466,10 @@
     onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); });
     onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ 
-      movements = snap.docs.map(d=>({id:d.id, ...d.data()})); 
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderMovements();
-      renderFilteredMovements(); 
+      renderFilteredMovements();
+      allPage = 1; // szűrt lista újraszámolásakor az első oldalra ugrunk
       renderFilteredAllMovements();
       renderStock();
     });
@@ -862,10 +889,7 @@
         ? `<span class="type-badge type-in"><span class="dot"></span>Bevét</span>`
         : `<span class="type-badge type-out"><span class="dot"></span>Kiadás</span>`;
     }
-
-    function typeLabel(type){
-      return type==='in' ? 'Bevét' : 'Kiadás';
-    }
+    function typeLabel(type){ return type==='in' ? 'Bevét' : 'Kiadás'; }
 
     function dateFilter(stamp, from, to) {
       if(from && stamp < from) return false;
@@ -901,18 +925,15 @@
       });
     }
 
-    ['in', 'out'].forEach(prefix=>{
-      document.getElementById(`${prefix}-filter-from`).addEventListener('input', renderFilteredMovements);
-      document.getElementById(`${prefix}-filter-to`).addEventListener('input', renderFilteredMovements);
-      document.getElementById(`${prefix}-filter-reset`).addEventListener('click', ()=>{
-        document.getElementById(`${prefix}-filter-from`).value = '';
-        document.getElementById(`${prefix}-filter-to`).value = '';
-        renderFilteredMovements();
-      });
-    });
+    /* ====== Szűrt All + Lapozás ====== */
+    let stockPage = 1, stockPageSize = 20;
+    let allPage = 1, allPageSize = 20;
 
-    ['all-filter-type', 'all-filter-from', 'all-filter-to', 'all-filter-product', 'all-filter-partner'].forEach(id => {
-      document.getElementById(id).addEventListener('input', renderFilteredAllMovements);
+    ['all-filter-type','all-filter-from','all-filter-to','all-filter-product','all-filter-partner'].forEach(id=>{
+      document.getElementById(id).addEventListener('input', ()=>{
+        allPage = 1; // szűrés változásakor vissza az első oldalra
+        renderFilteredAllMovements();
+      });
     });
 
     document.getElementById('all-filter-reset').addEventListener('click', () => {
@@ -921,8 +942,15 @@
       document.getElementById('all-filter-to').value = '';
       document.getElementById('all-filter-product').value = '';
       document.getElementById('all-filter-partner').value = '';
+      allPage = 1;
       renderFilteredAllMovements();
     });
+
+    // Lapozó gombok
+    document.getElementById('stock-prev').addEventListener('click', ()=>{ stockPage = Math.max(1, stockPage-1); renderStock(); });
+    document.getElementById('stock-next').addEventListener('click', ()=>{ stockPage += 1; renderStock(); });
+    document.getElementById('all-prev').addEventListener('click', ()=>{ allPage = Math.max(1, allPage-1); renderFilteredAllMovements(); });
+    document.getElementById('all-next').addEventListener('click', ()=>{ allPage += 1; renderFilteredAllMovements(); });
 
     function getFilteredAllMovements() {
       const filterType = document.getElementById('all-filter-type').value;
@@ -948,7 +976,15 @@
     function renderFilteredAllMovements() {
       const tbodyAll = document.getElementById('tbody-all');
       tbodyAll.innerHTML = '';
-      getFilteredAllMovements().forEach(m => {
+
+      const rows = getFilteredAllMovements();
+      const totalPages = Math.max(1, Math.ceil(rows.length / allPageSize));
+      allPage = Math.min(allPage, totalPages);
+
+      const start = (allPage - 1) * allPageSize;
+      const slice = rows.slice(start, start + allPageSize);
+
+      slice.forEach(m => {
         const p = getProduct(m.productId);
         const partner = m.type === 'in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
         const tr = document.createElement('tr');
@@ -962,18 +998,37 @@
         `;
         tbodyAll.appendChild(tr);
       });
+
+      // Pager állapot
+      document.getElementById('all-pageinfo').textContent = `${allPage} / ${totalPages}`;
+      document.getElementById('all-prev').disabled = (allPage<=1);
+      document.getElementById('all-next').disabled = (allPage>=totalPages);
     }
 
     function renderStock(){
       const tb = document.getElementById('tbody-stock'); tb.innerHTML='';
       const map = stockMap();
-      products.forEach(p=>{
+      const rows = products.map(p=>{
         const qty = map.get(p.id) || 0;
+        return { p, qty };
+      });
+
+      const totalPages = Math.max(1, Math.ceil(rows.length / stockPageSize));
+      stockPage = Math.min(stockPage, totalPages);
+      const start = (stockPage - 1) * stockPageSize;
+      const slice = rows.slice(start, start + stockPageSize);
+
+      slice.forEach(({p, qty})=>{
         const tr = document.createElement('tr');
         if(p.min && qty < p.min) tr.classList.add('low');
         tr.innerHTML = `<td>${esc(p.name)}</td><td>${esc(p.sku||'')}</td><td>${fmt.format(qty)}</td><td>${esc(p.unit||'db')}</td><td>${p.min??0}</td>`;
         tb.appendChild(tr);
       });
+
+      // Pager állapot
+      document.getElementById('stock-pageinfo').textContent = `${stockPage} / ${totalPages}`;
+      document.getElementById('stock-prev').disabled = (stockPage<=1);
+      document.getElementById('stock-next').disabled = (stockPage>=totalPages);
     }
 
     function stockMap(){
@@ -1035,7 +1090,7 @@
       return toCsv([header, ...rows], ';');
     }
 
-    /* ====== ÚJ: Összes mozgás CSV export (szűrve) ====== */
+    /* ====== Összes mozgás CSV export (szűrve) ====== */
     const exportAllBtn = document.getElementById('export-all');
     if(exportAllBtn){
       exportAllBtn.addEventListener('click', ()=>{
@@ -1066,6 +1121,45 @@
       return toCsv([header, ...rows], ';');
     }
 
+    /* ====== ÚJ: Biztonsági export (teljes adatbázis JSON) ====== */
+    document.getElementById('export-backup').addEventListener('click', ()=>{
+      try{
+        const backup = buildFullBackupJson();
+        const json = JSON.stringify(backup, null, 2);
+        downloadText(json, 'backup_full', 'application/json', 'json');
+      }catch(e){
+        showErr('Biztonsági export hiba: ' + (e?.message || e));
+      }
+    });
+
+    function buildFullBackupJson(){
+      const toIso = (ts)=>{
+        try{
+          if(!ts) return null;
+          if(typeof ts.toDate === 'function') return ts.toDate().toISOString();
+          if(ts.seconds) return new Date(ts.seconds*1000 + Math.floor((ts.nanoseconds||0)/1e6)).toISOString();
+          return null;
+        }catch{ return null; }
+      };
+      return {
+        exportedAt: new Date().toISOString(),
+        suppliers: suppliers.map(s=>({ id:s.id, ...s })),
+        customers: customers.map(c=>({ id:c.id, ...c })),
+        products:  products.map(p=>({ id:p.id, ...p })),
+        movements: movements.map(m=>({
+          id: m.id,
+          type: m.type,
+          productId: m.productId,
+          qty: m.qty,
+          unit: m.unit || null,
+          partnerId: m.partnerId || null,
+          note: m.note || '',
+          stamp: m.stamp || null,
+          ts: toIso(m.ts)
+        }))
+      };
+    }
+
     /* ====== Közös letöltő & CSV util ====== */
     function downloadCsv(csvString, baseName){
       const bom = "\uFEFF"; // UTF-8 BOM a magyar ékezetekhez
@@ -1083,6 +1177,21 @@
       URL.revokeObjectURL(url);
     }
 
+    function downloadText(text, baseName, mime, ext){
+      const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      a.href = url;
+      a.download = `${baseName}_${d.toISOString().slice(0,10)}_${hh}${mm}.${ext||'txt'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     function toCsv(rows, sep=','){
       return rows.map(r=> r.map(cell=>{
         const s = String(cell ?? '');
@@ -1091,7 +1200,7 @@
         return needQuote ? `"${escaped}"` : escaped;
       }).join(sep)).join('\n');
     }
-    /* ====== /CSV export ====== */
+    /* ====== /Export ====== */
   </script>
 </body>
 </html>
