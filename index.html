@@ -38,7 +38,7 @@
     .hide{display:none}
     .inline-actions{display:flex;gap:6px}
 
-    /* Görgethető táblakonténer: sticky fejléchez max-height kell */
+    /* Görgethető táblakonténer a sticky fejléchez */
     .tablewrap{overflow:auto; max-height:520px; border:1px solid var(--line); border-radius:12px;}
 
     /* Pager */
@@ -88,7 +88,6 @@
       <h1>Egyszerű készletkezelő</h1>
       <div class="row">
         <div class="tag">Firebase szinkron</div>
-        <!-- ÚJ: Biztonsági export gomb (teljes adatbázis JSON) -->
         <button id="export-backup" class="btn ghost" type="button" title="Teljes adatbázis biztonsági exportja (JSON)">Biztonsági export (JSON)</button>
       </div>
     </header>
@@ -162,6 +161,12 @@
             <tbody id="tbody-in"></tbody>
           </table>
         </div>
+        <!-- ÚJ: lapozó a bevétekhez -->
+        <div class="pager">
+          <button id="in-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="in-pageinfo">1 / 1</span>
+          <button id="in-next" class="btn ghost" type="button">Következő ▶</button>
+        </div>
       </div>
     </section>
 
@@ -225,6 +230,12 @@
             <tbody id="tbody-out"></tbody>
           </table>
         </div>
+        <!-- ÚJ: lapozó a kiadásokhoz -->
+        <div class="pager">
+          <button id="out-prev" class="btn ghost" type="button">◀ Előző</button>
+          <span class="info" id="out-pageinfo">1 / 1</span>
+          <button id="out-next" class="btn ghost" type="button">Következő ▶</button>
+        </div>
       </div>
     </section>
 
@@ -245,7 +256,6 @@
             <tbody id="tbody-stock"></tbody>
           </table>
         </div>
-        <!-- ÚJ: lapozó a készlethez -->
         <div class="pager">
           <button id="stock-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="stock-pageinfo">1 / 1</span>
@@ -291,7 +301,6 @@
             <tbody id="tbody-all"></tbody>
           </table>
         </div>
-        <!-- ÚJ: lapozó az összes mozgáshoz -->
         <div class="pager">
           <button id="all-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="all-pageinfo">1 / 1</span>
@@ -363,7 +372,6 @@
         </div>
       </div>
 
-      <!-- Veszélyzóna -->
       <div class="card danger" style="grid-column:1/-1">
         <h2>Veszélyzóna</h2>
         <p class="muted">A gomb az <b>összes adatot</b> törli: beszállítók, megrendelők, termékek, mozgások. A művelet nem visszavonható.</p>
@@ -466,10 +474,11 @@
     onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); });
     onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ 
-      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
-      renderMovements();
-      renderFilteredMovements();
-      allPage = 1; // szűrt lista újraszámolásakor az első oldalra ugrunk
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()})); 
+      renderMovements();          // hagyjuk meg a teljes nézetet
+      inPage = 1; outPage = 1;    // friss adatnál első oldal
+      renderFilteredMovements();  // szűrt + lapozott bevét/kiadás
+      allPage = 1;                // összes mozgás: első oldalra
       renderFilteredAllMovements();
       renderStock();
     });
@@ -840,7 +849,7 @@
       }
     }
 
-    /* ====== Listák renderelése ====== */
+    /* ====== Listák renderelése (teljes) ====== */
     function renderSuppliers(){
       const tb = document.getElementById('tbody-sup'); tb.innerHTML='';
       suppliers.forEach(s=>{
@@ -897,41 +906,83 @@
       return true;
     }
 
+    /* ====== Lapozás állapotok ====== */
+    let stockPage = 1, stockPageSize = 20;
+    let allPage   = 1, allPageSize   = 20;
+    let inPage    = 1, inPageSize    = 20;
+    let outPage   = 1, outPageSize   = 20;
+
+    /* ====== Bevét/Kiadás szűrt + lapozott render ====== */
     function renderFilteredMovements() {
+      // --- Bevét ---
       const fromIn = document.getElementById('in-filter-from').value;
       const toIn = document.getElementById('in-filter-to').value;
       const tbIn = document.getElementById('tbody-in');
       tbIn.innerHTML = '';
-      movements.filter(m=> m.type==='in' && dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn))
-      .forEach(m=>{
+
+      const inRows = movements
+        .filter(m=> m.type==='in' && dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn));
+
+      const inTotalPages = Math.max(1, Math.ceil(inRows.length / inPageSize));
+      inPage = Math.min(inPage, inTotalPages);
+      const inStart = (inPage - 1) * inPageSize;
+      inRows.slice(inStart, inStart + inPageSize).forEach(m=>{
         const p = getProduct(m.productId);
         const partner = getSupplier(m.partnerId);
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>${typeBadge('in')}</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
         tbIn.appendChild(tr);
       });
+      document.getElementById('in-pageinfo').textContent = `${inPage} / ${inTotalPages}`;
+      document.getElementById('in-prev').disabled = (inPage<=1);
+      document.getElementById('in-next').disabled = (inPage>=inTotalPages);
 
+      // --- Kiadás ---
       const fromOut = document.getElementById('out-filter-from').value;
       const toOut = document.getElementById('out-filter-to').value;
       const tbOut = document.getElementById('tbody-out');
       tbOut.innerHTML = '';
-      movements.filter(m=> m.type==='out' && dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut))
-      .forEach(m=>{
+
+      const outRows = movements
+        .filter(m=> m.type==='out' && dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut));
+
+      const outTotalPages = Math.max(1, Math.ceil(outRows.length / outPageSize));
+      outPage = Math.min(outPage, outTotalPages);
+      const outStart = (outPage - 1) * outPageSize;
+      outRows.slice(outStart, outStart + outPageSize).forEach(m=>{
         const p = getProduct(m.productId);
         const partner = getCustomer(m.partnerId);
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${esc(m.stamp||'–')}</td><td>${typeBadge('out')}</td><td>${esc(p? p.name : m.productId)}</td><td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td><td>${esc(partner? partner.name : '–')}</td><td>${esc(m.note||'')}</td>`;
         tbOut.appendChild(tr);
       });
+      document.getElementById('out-pageinfo').textContent = `${outPage} / ${outTotalPages}`;
+      document.getElementById('out-prev').disabled = (outPage<=1);
+      document.getElementById('out-next').disabled = (outPage>=outTotalPages);
     }
 
-    /* ====== Szűrt All + Lapozás ====== */
-    let stockPage = 1, stockPageSize = 20;
-    let allPage = 1, allPageSize = 20;
+    // Szűrők: bevét/kiadás – oldal vissza 1-re
+    ['in','out'].forEach(prefix=>{
+      document.getElementById(`${prefix}-filter-from`).addEventListener('input', ()=>{ if(prefix==='in'){ inPage=1; } else { outPage=1; } renderFilteredMovements(); });
+      document.getElementById(`${prefix}-filter-to`).addEventListener('input', ()=>{ if(prefix==='in'){ inPage=1; } else { outPage=1; } renderFilteredMovements(); });
+      document.getElementById(`${prefix}-filter-reset`).addEventListener('click', ()=>{
+        document.getElementById(`${prefix}-filter-from`).value = '';
+        document.getElementById(`${prefix}-filter-to`).value = '';
+        if(prefix==='in'){ inPage=1; } else { outPage=1; }
+        renderFilteredMovements();
+      });
+    });
 
+    // Pager gombok: bevét/kiadás
+    document.getElementById('in-prev').addEventListener('click', ()=>{ inPage = Math.max(1, inPage-1); renderFilteredMovements(); });
+    document.getElementById('in-next').addEventListener('click', ()=>{ inPage += 1; renderFilteredMovements(); });
+    document.getElementById('out-prev').addEventListener('click', ()=>{ outPage = Math.max(1, outPage-1); renderFilteredMovements(); });
+    document.getElementById('out-next').addEventListener('click', ()=>{ outPage += 1; renderFilteredMovements(); });
+
+    /* ====== Összes mozgás szűrt + lapozott ====== */
     ['all-filter-type','all-filter-from','all-filter-to','all-filter-product','all-filter-partner'].forEach(id=>{
       document.getElementById(id).addEventListener('input', ()=>{
-        allPage = 1; // szűrés változásakor vissza az első oldalra
+        allPage = 1;
         renderFilteredAllMovements();
       });
     });
@@ -946,9 +997,6 @@
       renderFilteredAllMovements();
     });
 
-    // Lapozó gombok
-    document.getElementById('stock-prev').addEventListener('click', ()=>{ stockPage = Math.max(1, stockPage-1); renderStock(); });
-    document.getElementById('stock-next').addEventListener('click', ()=>{ stockPage += 1; renderStock(); });
     document.getElementById('all-prev').addEventListener('click', ()=>{ allPage = Math.max(1, allPage-1); renderFilteredAllMovements(); });
     document.getElementById('all-next').addEventListener('click', ()=>{ allPage += 1; renderFilteredAllMovements(); });
 
@@ -999,11 +1047,14 @@
         tbodyAll.appendChild(tr);
       });
 
-      // Pager állapot
       document.getElementById('all-pageinfo').textContent = `${allPage} / ${totalPages}`;
       document.getElementById('all-prev').disabled = (allPage<=1);
       document.getElementById('all-next').disabled = (allPage>=totalPages);
     }
+
+    /* ====== Készlet lapozás ====== */
+    document.getElementById('stock-prev').addEventListener('click', ()=>{ stockPage = Math.max(1, stockPage-1); renderStock(); });
+    document.getElementById('stock-next').addEventListener('click', ()=>{ stockPage += 1; renderStock(); });
 
     function renderStock(){
       const tb = document.getElementById('tbody-stock'); tb.innerHTML='';
@@ -1025,7 +1076,6 @@
         tb.appendChild(tr);
       });
 
-      // Pager állapot
       document.getElementById('stock-pageinfo').textContent = `${stockPage} / ${totalPages}`;
       document.getElementById('stock-prev').disabled = (stockPage<=1);
       document.getElementById('stock-next').disabled = (stockPage>=totalPages);
@@ -1066,7 +1116,7 @@
     function getCustomer(id){ return customers.find(c=>c.id===id); }
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
 
-    /* ====== Raktárkészlet CSV export ====== */
+    /* ====== Exportok ====== */
     const exportBtn = document.getElementById('export-stock');
     if(exportBtn){
       exportBtn.addEventListener('click', ()=>{
@@ -1090,7 +1140,6 @@
       return toCsv([header, ...rows], ';');
     }
 
-    /* ====== Összes mozgás CSV export (szűrve) ====== */
     const exportAllBtn = document.getElementById('export-all');
     if(exportAllBtn){
       exportAllBtn.addEventListener('click', ()=>{
@@ -1121,7 +1170,6 @@
       return toCsv([header, ...rows], ';');
     }
 
-    /* ====== ÚJ: Biztonsági export (teljes adatbázis JSON) ====== */
     document.getElementById('export-backup').addEventListener('click', ()=>{
       try{
         const backup = buildFullBackupJson();
@@ -1160,9 +1208,8 @@
       };
     }
 
-    /* ====== Közös letöltő & CSV util ====== */
     function downloadCsv(csvString, baseName){
-      const bom = "\uFEFF"; // UTF-8 BOM a magyar ékezetekhez
+      const bom = "\uFEFF";
       const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1200,7 +1247,6 @@
         return needQuote ? `"${escaped}"` : escaped;
       }).join(sep)).join('\n');
     }
-    /* ====== /Export ====== */
   </script>
 </body>
 </html>
