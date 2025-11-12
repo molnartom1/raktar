@@ -68,7 +68,7 @@
     .modal footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
     .btn.bad{border-color:var(--warn);background:var(--warn)}
     .btn.good{border-color:var(--ok);background:var(--ok)}
-    .btn.ghost-danger{background:#fff;border-color:var(--warn);color:var(--warn)}
+    .btn.ghost-danger{background:#fff;border-color:var(--warn);color:#var(--warn)}
 
     /* Snackbar (Undo) */
     .snackbar{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#111827;color:#fff;padding:12px 14px;border-radius:12px;display:none;align-items:center;gap:12px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.25)}
@@ -88,7 +88,7 @@
       <h1>Egyszerű készletkezelő</h1>
       <div class="row">
         <div class="tag">Firebase szinkron</div>
-        <button id="export-backup" class="btn ghost" type="button" title="Teljes adatbázis biztonsági exportja (JSON)">Biztonsági export (JSON)</button>
+        <!-- (ÁTHELYEZVE) Biztonsági export gomb kikerült a fejlécből -->
       </div>
     </header>
 
@@ -161,7 +161,7 @@
             <tbody id="tbody-in"></tbody>
           </table>
         </div>
-        <!-- ÚJ: lapozó a bevétekhez -->
+        <!-- Lapozás a bevétekhez -->
         <div class="pager">
           <button id="in-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="in-pageinfo">1 / 1</span>
@@ -230,7 +230,7 @@
             <tbody id="tbody-out"></tbody>
           </table>
         </div>
-        <!-- ÚJ: lapozó a kiadásokhoz -->
+        <!-- Lapozás a kiadásokhoz -->
         <div class="pager">
           <button id="out-prev" class="btn ghost" type="button">◀ Előző</button>
           <span class="info" id="out-pageinfo">1 / 1</span>
@@ -311,6 +311,17 @@
 
     <!-- Törzsadatok -->
     <section id="tab-torzs" class="grid grid-3 hide">
+      <!-- ÚJ KÁRTYA: Biztonsági mentés & visszaállítás -->
+      <div class="card" style="grid-column:1/-1">
+        <h2>Biztonsági mentés & visszaállítás</h2>
+        <p class="muted">A mentés a teljes adatbázist tartalmazó JSON-t készít. A visszaállítás a jelenlegi adatok törlésével jár.</p>
+        <div class="row" style="margin-top:8px">
+          <button id="export-backup" class="btn secondary" type="button">Biztonsági mentés (JSON)</button>
+          <input id="import-file" type="file" accept="application/json,.json" class="hide" />
+          <button id="import-backup" class="btn" type="button">Visszaállítás (JSON import)</button>
+        </div>
+      </div>
+
       <div class="card">
         <h2>Beszállítók</h2>
         <form id="form-sup">
@@ -372,6 +383,7 @@
         </div>
       </div>
 
+      <!-- Veszélyzóna -->
       <div class="card danger" style="grid-column:1/-1">
         <h2>Veszélyzóna</h2>
         <p class="muted">A gomb az <b>összes adatot</b> törli: beszállítók, megrendelők, termékek, mozgások. A művelet nem visszavonható.</p>
@@ -440,7 +452,7 @@
   <!-- Firebase v9+ modular CDN -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, query, orderBy, enableIndexedDbPersistence, writeBatch, getDocs, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
@@ -474,11 +486,11 @@
     onSnapshot(query(collection(db, COL_CUSTOMERS), orderBy('name')), (snap)=>{ customers = snap.docs.map(d=>({id:d.id, ...d.data()})); renderCustomers(); fillPartners(); });
     onSnapshot(query(collection(db, COL_PRODUCTS), orderBy('name')), (snap)=>{ products = snap.docs.map(d=>({id:d.id, ...d.data()})); renderProducts(); fillProducts(); renderStock(); });
     onSnapshot(query(collection(db, COL_MOVEMENTS), orderBy('ts','desc')), (snap)=>{ 
-      movements = snap.docs.map(d=>({id:d.id, ...d.data()})); 
-      renderMovements();          // hagyjuk meg a teljes nézetet
-      inPage = 1; outPage = 1;    // friss adatnál első oldal
-      renderFilteredMovements();  // szűrt + lapozott bevét/kiadás
-      allPage = 1;                // összes mozgás: első oldalra
+      movements = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderMovements();
+      inPage = 1; outPage = 1;
+      renderFilteredMovements();
+      allPage = 1;
       renderFilteredAllMovements();
       renderStock();
     });
@@ -763,7 +775,7 @@
       showSnack(type==='in' ? 'Bevét rögzítve.' : 'Kiadás rögzítve.', async ()=>{ await undoLast(); });
     }
 
-    // ====== (Eredeti) submitMulti megmarad ======
+    // ====== (Eredeti) submitMulti megmarad (nem hívjuk közvetlenül) ======
     async function submitMulti(type){
       hideErr();
       const partnerId = type==='in' ? document.getElementById('in-supplier').value : document.getElementById('out-customer').value;
@@ -1116,7 +1128,9 @@
     function getCustomer(id){ return customers.find(c=>c.id===id); }
     function esc(s){return String(s||'').replace(/[&<>"']/g, c=>({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"'"}[c]));}
 
-    /* ====== Exportok ====== */
+    /* ====== Export / Import ====== */
+
+    // Raktárkészlet CSV
     const exportBtn = document.getElementById('export-stock');
     if(exportBtn){
       exportBtn.addEventListener('click', ()=>{
@@ -1140,6 +1154,7 @@
       return toCsv([header, ...rows], ';');
     }
 
+    // Összes mozgás CSV (szűrten)
     const exportAllBtn = document.getElementById('export-all');
     if(exportAllBtn){
       exportAllBtn.addEventListener('click', ()=>{
@@ -1170,6 +1185,7 @@
       return toCsv([header, ...rows], ';');
     }
 
+    // Biztonsági mentés (JSON) – Törzsadat kártya
     document.getElementById('export-backup').addEventListener('click', ()=>{
       try{
         const backup = buildFullBackupJson();
@@ -1191,9 +1207,9 @@
       };
       return {
         exportedAt: new Date().toISOString(),
-        suppliers: suppliers.map(s=>({ id:s.id, ...s })),
-        customers: customers.map(c=>({ id:c.id, ...c })),
-        products:  products.map(p=>({ id:p.id, ...p })),
+        suppliers: suppliers.map(({id, ...rest})=>({ id, ...rest })),
+        customers: customers.map(({id, ...rest})=>({ id, ...rest })),
+        products:  products.map(({id, ...rest})=>({ id, ...rest })),
         movements: movements.map(m=>({
           id: m.id,
           type: m.type,
@@ -1208,8 +1224,79 @@
       };
     }
 
+    // Visszaállítás (JSON import) – Törzsadat kártya
+    const importBtn = document.getElementById('import-backup');
+    const importFile = document.getElementById('import-file');
+
+    importBtn.addEventListener('click', ()=>{
+      importFile.value = '';
+      importFile.click();
+    });
+
+    importFile.addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0];
+      if(!file) return;
+      let data;
+      try{
+        const text = await file.text();
+        data = JSON.parse(text);
+      }catch(err){
+        showErr('Hibás JSON fájl.');
+        return;
+      }
+
+      // Struktúra ellenőrzés
+      if(!data || !Array.isArray(data.suppliers) || !Array.isArray(data.customers) || !Array.isArray(data.products) || !Array.isArray(data.movements)){
+        showErr('A backup szerkezete érvénytelen. Szükséges kulcsok: suppliers, customers, products, movements.');
+        return;
+      }
+
+      const ok = await openConfirm({
+        title: 'Visszaállítás (JSON import)',
+        message: 'A visszaállítás törli a jelenlegi adatokat és betölti a backup tartalmát.',
+        summary: `Beszállítók: ${data.suppliers.length} • Megrendelők: ${data.customers.length} • Termékek: ${data.products.length} • Mozgások: ${data.movements.length}`,
+        items: ['A művelet nagy mennyiségű írást végez a Firestore-ban.','Ne zárd be az oldalt a folyamat közben.'],
+        requireText: 'TÖRLÉS'
+      });
+      if(!ok) return;
+
+      try{
+        // 1) Törlés mindenből
+        await wipeCollection(COL_MOVEMENTS);
+        await wipeCollection(COL_PRODUCTS);
+        await wipeCollection(COL_SUPPLIERS);
+        await wipeCollection(COL_CUSTOMERS);
+
+        // 2) Import – azonosító megtartása (setDoc adott id-re)
+        await batchImport(COL_SUPPLIERS, data.suppliers);
+        await batchImport(COL_CUSTOMERS, data.customers);
+        await batchImport(COL_PRODUCTS,  data.products);
+        await batchImport(COL_MOVEMENTS, data.movements);
+
+        showSnack('Visszaállítás kész. Az adatok frissültek.');
+      }catch(err){
+        showErr('Visszaállítás hiba: ' + (err?.message || err));
+      }
+    });
+
+    async function batchImport(colName, arr){
+      const CHUNK = 400;
+      for(let i=0;i<arr.length;i+=CHUNK){
+        const batch = writeBatch(db);
+        arr.slice(i,i+CHUNK).forEach(item=>{
+          const id = item.id || doc(collection(db, colName)).id;
+          const copy = {...item};
+          delete copy.id;
+          // Mozgásoknál a ts lehet ISO string -> vissza nem állítjuk szerverként, a stamp a fontos a riportokhoz
+          batch.set(doc(collection(db, colName), id), copy);
+        });
+        await batch.commit();
+      }
+    }
+
+    /* ====== Közös letöltő & CSV util ====== */
     function downloadCsv(csvString, baseName){
-      const bom = "\uFEFF";
+      const bom = "\uFEFF"; // UTF-8 BOM a magyar ékezetekhez
       const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1247,6 +1334,7 @@
         return needQuote ? `"${escaped}"` : escaped;
       }).join(sep)).join('\n');
     }
+    /* ====== /Export-Import ====== */
   </script>
 </body>
 </html>
