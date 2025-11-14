@@ -1989,7 +1989,7 @@
         return;
       }
 
-      // BEVÉT: engedjük új termékként rögzíteni
+      // BEVÉT: engedjük új termékként rögzíteni, külön névvel
       const ok = await openConfirm({
         title: 'Új termék létrehozása',
         message: 'Nincs ilyen cikkszám a termékek között.',
@@ -1999,10 +1999,17 @@
 
       if(!ok) return;
 
+      // Név bekérése külön (ha üres, marad a kód a név is)
+      const nameInput = window.prompt(
+        'Add meg az új termék nevét!\n(Ha üresen hagyod, a cikkszám lesz a név is.)',
+        trimmed
+      );
+      const finalName = (nameInput && nameInput.trim()) || trimmed;
+
       try{
         const newProdData = {
           sku: trimmed,
-          name: trimmed,
+          name: finalName,
           unit: 'db',
           min: 0
         };
