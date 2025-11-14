@@ -73,6 +73,7 @@
     }
     .btn.secondary{background:#fff;color:var(--accent)}
     .btn.ghost{background:#fff;border-color:var(--line);color:#0f172a}
+    .btn.small{padding:6px 8px;font-size:12px;border-radius:10px}
     /* Fókusz-kiemelés OFF */
     .btn:focus,
     .btn:focus-visible,
@@ -258,6 +259,14 @@
 
     .th-sortable{cursor:pointer;user-select:none}
     .th-sortable .arrow{font-size:11px;margin-left:6px;color:var(--muted)}
+
+    /* Scanner video */
+    #scan-video{
+      width:100%;
+      max-height:320px;
+      border-radius:12px;
+      background:#000;
+    }
   </style>
 </head>
 <body>
@@ -307,7 +316,7 @@
           <table>
             <thead>
               <tr>
-                <th style="min-width:240px">Termék</th>
+                <th style="min-width:260px">Termék</th>
                 <th style="min-width:120px">Mennyiség</th>
                 <th style="min-width:100px">ME</th>
                 <th style="min-width:260px">Megjegyzés (soronként, opcionális)</th>
@@ -388,7 +397,7 @@
           <table>
             <thead>
               <tr>
-                <th style="min-width:240px">Termék</th>
+                <th style="min-width:260px">Termék</th>
                 <th style="min-width:120px">Mennyiség</th>
                 <th style="min-width:100px">ME</th>
                 <th style="min-width:260px">Megjegyzés (soronként, opcionális)</th>
@@ -604,7 +613,10 @@
         <h2>Termékek</h2>
         <form id="form-prod">
           <label>Cikkszám (opcionális)</label>
-          <input id="prod-sku" placeholder="Cikkszám" />
+          <div class="row">
+            <input id="prod-sku" placeholder="Cikkszám" />
+            <button type="button" class="btn ghost small" id="btn-scan-sku">📷 Kód beolvasása</button>
+          </div>
           <label>Megnevezés</label>
           <input id="prod-name" placeholder="Megnevezés" required />
           <div class="grid grid-2">
@@ -656,7 +668,7 @@
     </footer>
   </div>
 
-  <!-- Modális -->
+  <!-- Megerősítő modál -->
   <div id="confirm-backdrop" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <header>
@@ -675,6 +687,25 @@
       <footer>
         <button id="modal-cancel" class="btn ghost-danger" type="button">Mégse</button>
         <button id="modal-ok" class="btn good" type="button">Igen, rögzítem</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Vonalkód / QR kód olvasó modál -->
+  <div id="scan-backdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scan-title">
+      <header>
+        <h3 id="scan-title">Vonalkód / QR-kód beolvasása</h3>
+        <button id="scan-close" class="btn ghost-danger" type="button">Mégse</button>
+      </header>
+      <div class="content">
+        <video id="scan-video" autoplay muted playsinline></video>
+        <p class="muted" style="margin-top:8px;">
+          Irányítsd a kamerát a vonalkódra vagy QR-kódra. Sikeres olvasás után az ablak automatikusan bezárul.
+        </p>
+      </div>
+      <footer>
+        <button id="scan-cancel" class="btn ghost-danger" type="button">Mégse</button>
       </footer>
     </div>
   </div>
@@ -721,7 +752,10 @@
     })();
   </script>
 
-  <!-- Firebase v9+ modular CDN -->
+  <!-- ZXing (vonalkód/QR olvasó) -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+
+  <!-- Firebase v9+ modular CDN + app logika -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import {
@@ -861,7 +895,12 @@
     function addLineRow(tbody, type){
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><select class="li-product" required></select></td>
+        <td>
+          <div class="row" style="gap:4px;">
+            <select class="li-product" required style="flex:1 1 auto;"></select>
+            <button type="button" class="btn ghost small li-scan" title="Vonalkód / QR beolvasása">📷</button>
+          </div>
+        </td>
         <td><input class="li-qty" type="number" min="0.01" step="0.01" value="1" required /></td>
         <td><input class="li-unit" /></td>
         <td><input class="li-note" placeholder="Megjegyzés (opcionális)" /></td>
@@ -870,7 +909,10 @@
           <button type="button" class="btn secondary li-del">Töröl</button>
         </td>`;
       tbody.appendChild(tr);
-      fillRowProducts(tr.querySelector('.li-product'), tr.querySelector('.li-unit'));
+      const sel = tr.querySelector('.li-product');
+      const unitInput = tr.querySelector('.li-unit');
+      fillRowProducts(sel, unitInput);
+
       tr.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
       tr.querySelector('.li-del').addEventListener('click', ()=>{
         tr.remove();
@@ -879,15 +921,27 @@
       tr.querySelector('.li-dup').addEventListener('click', ()=>{
         const clone = tr.cloneNode(true);
         tbody.insertBefore(clone, tr.nextSibling);
-        fillRowProducts(clone.querySelector('.li-product'), clone.querySelector('.li-unit'));
+        const sel2 = clone.querySelector('.li-product');
+        const unit2 = clone.querySelector('.li-unit');
+        fillRowProducts(sel2, unit2);
         clone.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
         clone.querySelector('.li-del').addEventListener('click', ()=>{
           clone.remove();
           updateSum(type);
         });
         clone.querySelector('.li-dup').addEventListener('click', ()=>{});
+        const scanBtn2 = clone.querySelector('.li-scan');
+        scanBtn2.addEventListener('click', ()=>{
+          startScan(code => applyScanToRow(code, clone));
+        });
         updateSum(type);
       });
+
+      const scanBtn = tr.querySelector('.li-scan');
+      scanBtn.addEventListener('click', ()=>{
+        startScan(code => applyScanToRow(code, tr));
+      });
+
       updateSum(type);
     }
 
@@ -1829,6 +1883,101 @@
         showErr('Teljes törlés hiba: ' + (err?.message || err));
       }
     });
+
+    /* ==========> VONALKÓD / QR SCANNER LOGIKA <========== */
+
+    const scanBackdrop = document.getElementById('scan-backdrop');
+    const scanVideo = document.getElementById('scan-video');
+    const scanClose = document.getElementById('scan-close');
+    const scanCancel = document.getElementById('scan-cancel');
+    const btnScanSku = document.getElementById('btn-scan-sku');
+
+    let scanStream = null;
+    let scanReader = null;
+    let scanActiveCallback = null;
+
+    function stopScan(){
+      try{
+        if(scanReader){
+          scanReader.reset();
+          scanReader = null;
+        }
+      }catch{}
+      if(scanStream){
+        scanStream.getTracks().forEach(t=>t.stop());
+        scanStream = null;
+      }
+      scanBackdrop.style.display='none';
+      scanActiveCallback = null;
+    }
+
+    async function startScan(callback){
+      if(!window.ZXing){
+        showErr('A vonalkódolvasó könyvtár nem töltődött be.');
+        return;
+      }
+      try{
+        const { BrowserMultiFormatReader, NotFoundException } = window.ZXing;
+        scanBackdrop.style.display='flex';
+        scanActiveCallback = callback;
+
+        scanReader = new BrowserMultiFormatReader();
+
+        // kérjük a kamerát
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } }
+        });
+        scanStream = stream;
+        scanVideo.srcObject = stream;
+
+        scanReader.decodeFromVideoDevice(null, 'scan-video', (result, err)=>{
+          if(result){
+            const text = result.text || '';
+            if(scanActiveCallback){
+              const cb = scanActiveCallback;
+              stopScan();
+              cb(text);
+            }
+          }else if(err && !(err instanceof NotFoundException)){
+            // komolyabb hiba esetén álljunk le
+            console.error(err);
+          }
+        });
+      }catch(e){
+        stopScan();
+        showErr('Nem sikerült elindítani a kamerát: ' + (e?.message||e));
+      }
+    }
+
+    scanClose.addEventListener('click', stopScan);
+    scanCancel.addEventListener('click', stopScan);
+
+    // Termékek → Cikkszám mezőbe olvasás
+    btnScanSku.addEventListener('click', ()=>{
+      startScan(code=>{
+        document.getElementById('prod-sku').value = code;
+      });
+    });
+
+    // Beolvasott kód alkalmazása egy sorra (SKU alapján termék választása)
+    function applyScanToRow(code, tr){
+      const trimmed = String(code||'').trim();
+      if(!trimmed){
+        showErr('Üres kódot olvastunk be.');
+        return;
+      }
+      const product = products.find(p => String(p.sku||'').trim() === trimmed);
+      if(!product){
+        showErr('Nincs ilyen cikkszám a termékek között: '+trimmed);
+        return;
+      }
+      const sel = tr.querySelector('.li-product');
+      const unitInput = tr.querySelector('.li-unit');
+      if(sel){
+        sel.value = product.id;
+        unitInput.value = product.unit || 'db';
+      }
+    }
 
   </script>
 </body>
