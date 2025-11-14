@@ -267,6 +267,30 @@
       border-radius:12px;
       background:#000;
     }
+
+    /* SOR EGY SORBAN – termék, menny., ME, megjegyzés, gombok */
+    .line-row{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .line-product{
+      flex:2 1 220px;
+      min-width:180px;
+    }
+    .line-qty{
+      flex:0 0 90px;
+      max-width:90px;
+    }
+    .line-unit{
+      flex:0 0 80px;
+      max-width:80px;
+    }
+    .line-note{
+      flex:3 1 220px;
+      min-width:160px;
+    }
   </style>
 </head>
 <body>
@@ -710,6 +734,27 @@
     </div>
   </div>
 
+  <!-- Új termék bekérő modál (vonalkód után) -->
+  <div id="product-backdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
+      <header>
+        <h3 id="product-modal-title">Új termék létrehozása</h3>
+      </header>
+      <div class="content">
+        <label>Cikkszám</label>
+        <input id="prod-modal-sku" readonly />
+        <label>Megnevezés</label>
+        <input id="prod-modal-name" />
+        <label>Mértékegység</label>
+        <input id="prod-modal-unit" value="db" />
+      </div>
+      <footer>
+        <button id="prod-modal-cancel" class="btn ghost-danger" type="button">Mégse</button>
+        <button id="prod-modal-ok" class="btn good" type="button">Mentés</button>
+      </footer>
+    </div>
+  </div>
+
   <!-- Snackbar (Undo) -->
   <div id="snackbar" class="snackbar" role="status" aria-live="polite">
     <span id="snack-text">Rögzítve.</span>
@@ -895,18 +940,16 @@
     function addLineRow(tbody, type){
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
-          <div class="row" style="gap:4px;">
-            <select class="li-product" required style="flex:1 1 auto;"></select>
-            <button type="button" class="btn ghost small li-scan" title="Vonalkód / QR beolvasása">📷</button>
+        <td colspan="5">
+          <div class="line-row">
+            <select class="li-product line-product" required></select>
+            <input class="li-qty line-qty" type="number" min="0.01" step="0.01" value="1" required />
+            <input class="li-unit line-unit" />
+            <input class="li-note line-note" placeholder="Megjegyzés (opcionális)" />
+            <button type="button" class="btn ghost li-scan" title="Vonalkód / QR beolvasása">📷</button>
+            <button type="button" class="btn ghost li-dup">Dupláz</button>
+            <button type="button" class="btn secondary li-del">Töröl</button>
           </div>
-        </td>
-        <td><input class="li-qty" type="number" min="0.01" step="0.01" value="1" required /></td>
-        <td><input class="li-unit" /></td>
-        <td><input class="li-note" placeholder="Megjegyzés (opcionális)" /></td>
-        <td class="inline-actions">
-          <button type="button" class="btn ghost li-dup">Dupláz</button>
-          <button type="button" class="btn secondary li-del">Töröl</button>
         </td>`;
       tbody.appendChild(tr);
       const sel = tr.querySelector('.li-product');
@@ -1028,6 +1071,44 @@
         modalCancel.addEventListener('click', onCancel);
         if (modalClose) modalClose.addEventListener('click', onCancel);
         setTimeout(()=> document.addEventListener('keydown', onKey), 0);
+      });
+    }
+
+    // Új termék bekérő modálhoz referenciák
+    const productBackdrop = document.getElementById('product-backdrop');
+    const prodModalSku = document.getElementById('prod-modal-sku');
+    const prodModalName = document.getElementById('prod-modal-name');
+    const prodModalUnit = document.getElementById('prod-modal-unit');
+    const prodModalOk = document.getElementById('prod-modal-ok');
+    const prodModalCancel = document.getElementById('prod-modal-cancel');
+
+    function openProductModal({ sku, defaultName, defaultUnit }){
+      prodModalSku.value = sku || '';
+      prodModalName.value = defaultName || sku || '';
+      prodModalUnit.value = defaultUnit || 'db';
+      productBackdrop.style.display = 'flex';
+      return new Promise(resolve=>{
+        function close(res){
+          productBackdrop.style.display = 'none';
+          prodModalOk.removeEventListener('click', onOk);
+          prodModalCancel.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKey);
+          resolve(res);
+        }
+        function onOk(){
+          const name = prodModalName.value.trim() || (sku || '');
+          const unit = prodModalUnit.value.trim() || 'db';
+          close({ name, unit });
+        }
+        function onCancel(){ close(null); }
+        function onKey(e){
+          if(e.key === 'Escape') onCancel();
+          if(e.key === 'Enter') onOk();
+        }
+        prodModalOk.addEventListener('click', onOk);
+        prodModalCancel.addEventListener('click', onCancel);
+        setTimeout(()=> document.addEventListener('keydown', onKey), 0);
+        setTimeout(()=> prodModalName.focus(), 10);
       });
     }
 
@@ -1989,7 +2070,7 @@
         return;
       }
 
-      // BEVÉT: engedjük új termékként rögzíteni, külön névvel
+      // BEVÉT: először rákérdezünk, akarod-e új termékként
       const ok = await openConfirm({
         title: 'Új termék létrehozása',
         message: 'Nincs ilyen cikkszám a termékek között.',
@@ -1999,18 +2080,21 @@
 
       if(!ok) return;
 
-      // Név bekérése külön (ha üres, marad a kód a név is)
-      const nameInput = window.prompt(
-        'Add meg az új termék nevét!\n(Ha üresen hagyod, a cikkszám lesz a név is.)',
-        trimmed
-      );
-      const finalName = (nameInput && nameInput.trim()) || trimmed;
+      // Modálos bekérés: név + ME
+      const modalResult = await openProductModal({
+        sku: trimmed,
+        defaultName: trimmed,
+        defaultUnit: 'db'
+      });
+      if(!modalResult) return;
+      const finalName = modalResult.name;
+      const finalUnit = modalResult.unit || 'db';
 
       try{
         const newProdData = {
           sku: trimmed,
           name: finalName,
-          unit: 'db',
+          unit: finalUnit,
           min: 0
         };
         const ref = await addDoc(collection(db, COL_PRODUCTS), newProdData);
