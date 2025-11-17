@@ -291,7 +291,60 @@
       flex:3 1 220px;
       min-width:160px;
     }
-  </style>
+  
+/* ===== MOBIL OPTIMALIZÁLÁS ===== */
+
+@media (max-width: 600px) {
+
+  .wrap { padding: 12px; }
+
+  .tabs { gap: 4px; margin: 12px 0 18px; }
+  .tabbtn { padding: 8px 10px; font-size: 14px; }
+
+  .card { padding: 12px; border-radius: 12px; }
+
+  h2, h3 { font-size: 18px; }
+
+  .grid, .grid-2, .grid-3 { display: block; }
+  .grid > div, .grid-2 > div, .grid-3 > div { margin-bottom: 12px; }
+
+  input, select, textarea {
+    padding: 8px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+
+  label { font-size: 12px; margin-bottom: 2px; }
+
+  .line-row { flex-direction: column; align-items: stretch; }
+  .line-product, .line-qty, .line-unit, .line-note {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .line-row .btn { width: 100%; margin-top: 6px; }
+
+  table {
+    font-size: 13px;
+    min-width: 520px;
+  }
+
+  thead th, td { padding: 8px; }
+
+  .tablewrap { border-radius: 10px; max-height: 60vh; }
+
+  .pager { justify-content: center; margin-top: 6px; }
+  .pager .btn { padding: 6px 8px; font-size: 12px; }
+
+  .modal { max-width: 95%; padding: 0; border-radius: 14px; }
+  .modal header, .modal footer { padding: 12px; }
+  .modal .content { padding: 12px; }
+
+  #scan-video { max-height: 240px; }
+
+  .snackbar { width: 92%; left: 4%; transform: none; }
+}
+
+</style>
 </head>
 <body>
   <div class="wrap">
