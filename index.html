@@ -23,33 +23,17 @@
       background:var(--bg);
       color:var(--ink)
     }
-    .wrap{
-      max-width:1100px;
-      margin:auto;
-      padding:24px;
-    }
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      margin-bottom:16px
-    }
+    .wrap{max-width:1100px;margin:auto;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
     h1{font-size:clamp(20px,2.6vw,28px);margin:0}
     .tag{font-size:12px;color:var(--muted)}
-    .tabs{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin:16px 0 24px
-    }
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px}
     .tabbtn{
       padding:8px 12px;
       border-radius:999px;
       border:1px solid var(--line);
       background:#f1f5f9;
-      cursor:pointer;
-      font-size:14px;
+      cursor:pointer
     }
     .tabbtn.active{
       background:var(--accent);
@@ -75,28 +59,22 @@
       padding:10px;
       border:1px solid var(--line);
       border-radius:12px;
-      background:#fff;
-      font-size:14px;
+      background:#fff
     }
     textarea{min-height:72px}
-    .row{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{
       padding:10px 14px;
       border-radius:12px;
       border:1px solid var(--accent);
       background:var(--accent);
       color:#fff;
-      cursor:pointer;
-      font-size:14px;
+      cursor:pointer
     }
     .btn.secondary{background:#fff;color:var(--accent)}
     .btn.ghost{background:#fff;border-color:var(--line);color:#0f172a}
     .btn.small{padding:6px 8px;font-size:12px;border-radius:10px}
+    /* Fókusz-kiemelés OFF */
     .btn:focus,
     .btn:focus-visible,
     .tabbtn:focus,
@@ -152,7 +130,6 @@
       max-height:520px;
       border:1px solid var(--line);
       border-radius:12px;
-      -webkit-overflow-scrolling:touch;
     }
 
     .pager{
@@ -283,6 +260,7 @@
     .th-sortable{cursor:pointer;user-select:none}
     .th-sortable .arrow{font-size:11px;margin-left:6px;color:var(--muted)}
 
+    /* Scanner video */
     #scan-video{
       width:100%;
       max-height:320px;
@@ -290,6 +268,7 @@
       background:#000;
     }
 
+    /* SOR EGY SORBAN – termék, menny., ME, megjegyzés, gombok */
     .line-row{
       display:flex;
       gap:8px;
@@ -311,115 +290,6 @@
     .line-note{
       flex:3 1 220px;
       min-width:160px;
-    }
-
-    /* ====== MOBIL ====== */
-
-    @media (max-width:768px){
-      .wrap{
-        padding:16px 12px;
-      }
-      header{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:8px;
-      }
-      .tabs{
-        gap:6px;
-      }
-      .tabbtn{
-        flex:1 1 calc(50% - 6px);
-        text-align:center;
-      }
-      .tablewrap{
-        max-height:60vh;
-      }
-    }
-
-    @media (max-width:600px){
-      body{
-        font-size:14px;
-      }
-      h1{
-        font-size:20px;
-      }
-      .wrap{
-        padding:12px 8px 18px;
-      }
-      .row{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .row .btn{
-        width:100%;
-        justify-content:center;
-        text-align:center;
-      }
-      .btn.small{
-        width:auto;
-      }
-      input[type="date"],
-      input[type="text"],
-      select{
-        max-width:100%!important;
-      }
-      .pager{
-        justify-content:center;
-      }
-      table{
-        min-width:100%;
-      }
-      thead th,
-      td{
-        padding:8px;
-      }
-      .tablewrap{
-        position:relative;
-      }
-      .tablewrap::before{
-        content:'⬅️ Húzd oldalra a táblázatot ➡️';
-        display:block;
-        font-size:11px;
-        color:var(--muted);
-        padding:4px 8px;
-        border-bottom:1px solid var(--line);
-        background:linear-gradient(to right,#f8fafc,#fff);
-        position:sticky;
-        top:0;
-        z-index:2;
-      }
-      .tablewrap table{
-        margin-top:4px;
-      }
-      .line-row{
-        flex-direction:column;
-        align-items:stretch;
-      }
-      .line-product,
-      .line-qty,
-      .line-unit,
-      .line-note{
-        flex:1 0 100%;
-        max-width:100%;
-        min-width:0;
-      }
-      .line-row .btn{
-        width:100%;
-      }
-      .modal-backdrop{
-        align-items:flex-end;
-      }
-      .modal{
-        border-radius:16px 16px 0 0;
-        max-height:90vh;
-      }
-      .modal .content{
-        max-height:60vh;
-        overflow:auto;
-      }
-      #scan-video{
-        max-height:40vh;
-      }
     }
   </style>
 </head>
@@ -486,6 +356,7 @@
         </div>
       </div>
 
+      <!-- Bevét szűrő + lista -->
       <div class="row" style="margin-bottom:10px; margin-top:20px;">
         <label for="in-filter-from">Dátum szűrés:</label>
         <input id="in-filter-from" type="date" style="max-width:140px;margin-left:3px;">
@@ -566,6 +437,7 @@
         </div>
       </div>
 
+      <!-- Kiadás szűrő + lista -->
       <div class="row" style="margin-bottom:10px; margin-top:20px;">
         <label for="out-filter-from">Dátum szűrés:</label>
         <input id="out-filter-from" type="date" style="max-width:140px;margin-left:3px;">
@@ -635,6 +507,7 @@
         </div>
       </div>
 
+      <!-- Szűrők az Összes mozgáshoz -->
       <div class="row" style="gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 12px;">
         <label for="all-filter-type">Típus:</label>
         <select id="all-filter-type" style="max-width:120px;">
@@ -889,6 +762,7 @@
     <button id="snack-undo" class="undo">Visszavonás</button>
   </div>
 
+  <!-- UI bootstrap -->
   <script>
     (function(){
       const $ = (sel) => document.querySelector(sel);
@@ -923,8 +797,10 @@
     })();
   </script>
 
+  <!-- ZXing (vonalkód/QR olvasó) -->
   <script src="https://unpkg.com/@zxing/library@latest"></script>
 
+  <!-- Firebase v9+ modular CDN + app logika -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import {
@@ -966,6 +842,7 @@
     const $ = (sel) => document.querySelector(sel);
     const fmt = new Intl.NumberFormat('hu-HU', { maximumFractionDigits: 2 });
 
+    /* ======= Realtime ======= */
     onSnapshot(query(collection(db, COL_SUPPLIERS), orderBy('name')), (snap)=>{
       suppliers = snap.docs.map(d=>({id:d.id, ...d.data()}));
       renderSuppliers();
@@ -996,6 +873,7 @@
       renderStock();
     });
 
+    /* ======= Törzsadat űrlapok ======= */
     document.getElementById('form-sup').addEventListener('submit', async (e)=>{
       e.preventDefault();
       const name = document.getElementById('sup-name').value.trim();
@@ -1039,6 +917,7 @@
       }
     });
 
+    /* ====== Bevét/Kiadás sorok ====== */
     const inRowsTbody  = document.getElementById('tbody-in-rows');
     const outRowsTbody = document.getElementById('tbody-out-rows');
 
@@ -1130,6 +1009,7 @@
       ).textContent = `Összes mennyiség: ${fmt.format(sum)}`;
     }
 
+    /* ====== Modál + Undo ====== */
     const modalBackdrop = document.getElementById('confirm-backdrop');
     const modalOk = document.getElementById('modal-ok');
     const modalCancel = document.getElementById('modal-cancel');
@@ -1194,6 +1074,7 @@
       });
     }
 
+    // Új termék bekérő modálhoz referenciák
     const productBackdrop = document.getElementById('product-backdrop');
     const prodModalSku = document.getElementById('prod-modal-sku');
     const prodModalName = document.getElementById('prod-modal-name');
@@ -1270,6 +1151,7 @@
       lastInsert = null;
     }
 
+    /* ====== Listák render (mozgások, szűrés, lapozás) ====== */
     function renderMovements(){
       const tbAll = document.getElementById('tbody-all');
       const tbIn  = document.getElementById('tbody-in');
@@ -1318,6 +1200,7 @@
     function typeLabel(type){ return type==='in' ? 'Bevét' : 'Kiadás'; }
 
     function renderFilteredMovements(){
+      // Bevét
       const fromIn = document.getElementById('in-filter-from').value;
       const toIn   = document.getElementById('in-filter-to').value;
       const tbIn   = document.getElementById('tbody-in');
@@ -1347,6 +1230,7 @@
       document.getElementById('in-prev').disabled = (inPage<=1);
       document.getElementById('in-next').disabled = (inPage>=inTotalPages);
 
+      // Kiadás
       const fromOut = document.getElementById('out-filter-from').value;
       const toOut   = document.getElementById('out-filter-to').value;
       const tbOut   = document.getElementById('tbody-out');
@@ -1471,7 +1355,7 @@
       const start = (allPage - 1) * allPageSize;
       rows.slice(start, start + allPageSize).forEach(m=>{
         const p = getProduct(m.productId);
-        const partner = m.type==='in'
+        const partner = m.type === 'in'
           ? getSupplier(m.partnerId)
           : getCustomer(m.partnerId);
         const tr = document.createElement('tr');
@@ -1490,6 +1374,7 @@
       document.getElementById('all-next').disabled = (allPage>=totalPages);
     }
 
+    /* ====== Raktárkészlet: rendezés + lapozás ====== */
     document.getElementById('th-stock-name').addEventListener('click', ()=>{
       const was = stockSort.key==='name';
       stockSort.key='name';
@@ -1505,7 +1390,7 @@
       renderStock();
     });
 
-    let stockSort = { key: 'name', dir: 1 };
+    let stockSort = { key: 'name', dir: 1 }; // 1=ASC, -1=DESC
 
     function updateStockArrows(){
       document.getElementById('arrow-name').textContent =
@@ -1568,6 +1453,7 @@
       return m;
     }
 
+    /* ====== Törzsadat listák (10 sor/oldal) ====== */
     function renderSuppliers(){
       const tb = document.getElementById('tbody-sup');
       tb.innerHTML='';
@@ -1649,6 +1535,7 @@
       document.getElementById('prod-next').disabled = (prodPage>=totalPages);
     }
 
+    // Pager gombok
     document.getElementById('sup-prev').addEventListener('click', ()=>{
       supPage=Math.max(1, supPage-1);
       renderSuppliers();
@@ -1712,6 +1599,7 @@
       }[c]||c));
     }
 
+    /* ====== EXPORTOK ====== */
     document.getElementById('export-stock')?.addEventListener('click', ()=>{
       try{
         const csv = buildStockCsv();
@@ -1894,6 +1782,7 @@
       }
     }
 
+    /* ====== Letöltő segédek ====== */
     function downloadCsv(csvString, baseName){
       const bom = "\uFEFF";
       const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
@@ -1940,6 +1829,8 @@
       ).join('\n');
     }
 
+    /* ==========> RÖGZÍTÉS (Bevét/Kiadás) <========== */
+
     document.getElementById('in-submit').addEventListener('click', ()=>{
       handleSubmit('in');
     });
@@ -1981,6 +1872,7 @@
         );
         if(rows.length===0) return showErr('Adj hozzá legalább egy sort!');
 
+        // Kiadásnál készlet ellenőrzés
         if(!isIn){
           const map = stockMap();
           const need = new Map();
@@ -2052,6 +1944,7 @@
       }
     }
 
+    /* ==========> TELJES ADATBÁZIS TÖRLÉSE <========== */
     document.getElementById('wipe-all')?.addEventListener('click', async ()=>{
       const ok = await openConfirm({
         title: 'Teljes adatbázis törlése',
@@ -2071,6 +1964,8 @@
         showErr('Teljes törlés hiba: ' + (err?.message || err));
       }
     });
+
+    /* ==========> VONALKÓD / QR SCANNER LOGIKA <========== */
 
     const scanBackdrop = document.getElementById('scan-backdrop');
     const scanVideo = document.getElementById('scan-video');
@@ -2109,6 +2004,7 @@
 
         scanReader = new BrowserMultiFormatReader();
 
+        // kérjük a kamerát
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: "environment" } }
         });
@@ -2136,12 +2032,14 @@
     scanClose.addEventListener('click', stopScan);
     scanCancel.addEventListener('click', stopScan);
 
+    // Termékek → Cikkszám mezőbe olvasás
     btnScanSku.addEventListener('click', ()=>{
       startScan(code=>{
         document.getElementById('prod-sku').value = code;
       });
     });
 
+    // Beolvasott kód alkalmazása egy sorra (SKU alapján termék választása / létrehozása)
     async function applyScanToRow(code, tr){
       const trimmed = String(code||'').trim();
       if(!trimmed){
@@ -2149,9 +2047,11 @@
         return;
       }
 
+      // Van-e ilyen cikkszám a termékek között?
       const product = products.find(p => String(p.sku||'').trim() === trimmed);
 
       if(product){
+        // Ha létező termék: mind bevétnél, mind kiadásnál simán kiválasztjuk
         const sel = tr.querySelector('.li-product');
         const unitInput = tr.querySelector('.li-unit');
         if(sel){
@@ -2161,13 +2061,16 @@
         return;
       }
 
-      const isIn = !!tr.closest('#tbody-in-rows');
+      // Nincs ilyen cikkszám – nézzük, hogy bevét vagy kiadás sorban vagyunk
+      const isIn = !!tr.closest('#tbody-in-rows');   // true = BEVÉT, false = KIADÁS
 
       if(!isIn){
+        // KIADÁS: csak a meglévő termékek között kereshetünk
         showErr('Nincs ilyen cikkszám a termékek között: '+trimmed);
         return;
       }
 
+      // BEVÉT: először rákérdezünk, akarod-e új termékként
       const ok = await openConfirm({
         title: 'Új termék létrehozása',
         message: 'Nincs ilyen cikkszám a termékek között.',
@@ -2177,6 +2080,7 @@
 
       if(!ok) return;
 
+      // Modálos bekérés: név + ME
       const modalResult = await openProductModal({
         sku: trimmed,
         defaultName: trimmed,
@@ -2196,8 +2100,10 @@
         const ref = await addDoc(collection(db, COL_PRODUCTS), newProdData);
         const newProd = { id: ref.id, ...newProdData };
 
+        // Azonnal betesszük a lokális listába
         products.push(newProd);
 
+        // Frissítjük a sor legördülőjét és kiválasztjuk az új terméket
         const sel = tr.querySelector('.li-product');
         const unitInput = tr.querySelector('.li-unit');
         if(sel){
