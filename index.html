@@ -901,22 +901,40 @@
     });
 
     document.getElementById('form-prod').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const sku  = document.getElementById('prod-sku').value.trim();
-      const name = document.getElementById('prod-name').value.trim();
-      const unit = document.getElementById('prod-unit').value.trim() || 'db';
-      const min  = Number(document.getElementById('prod-min').value||0);
-      if(!name) return showErr('Adj meg megnevezést a terméknek!');
-      try{
-        await addDoc(collection(db, COL_PRODUCTS), {
-          sku, name, unit, min: isNaN(min)?0:min
-        });
-        e.target.reset();
-      }catch(err){
-        showErr('Termék mentése sikertelen: ' + (err?.message||err));
-      }
-    });
+  e.preventDefault();
+  const sku  = document.getElementById('prod-sku').value.trim();
+  const name = document.getElementById('prod-name').value.trim();
+  const unit = document.getElementById('prod-unit').value.trim() || 'db';
+  const min  = Number(document.getElementById('prod-min').value || 0);
 
+  if (!name) {
+    return showErr('Adj meg megnevezést a terméknek!');
+  }
+
+  // 🔒 Duplikált cikkszám (kód) ellenőrzése TÖRZSADATOKNÁL is
+  if (sku) {
+    const normalizedSku = sku.toLowerCase();
+    const existsSku = products.some(p =>
+      String(p.sku || '').trim().toLowerCase() === normalizedSku
+    );
+    if (existsSku) {
+      return showErr('Ilyen cikkszám már létezik a törzsadatok között. Kérlek, adj meg egy másik kódot!');
+    }
+  }
+
+  try{
+    await addDoc(collection(db, COL_PRODUCTS), {
+      sku,
+      name,
+      unit,
+      min: isNaN(min) ? 0 : min
+    });
+    e.target.reset();
+    hideErr?.(); // ha szeretnéd, sikeres mentés után eltűnik a hibaüzenet
+  }catch(err){
+    showErr('Termék mentése sikertelen: ' + (err?.message || err));
+  }
+});
     /* ====== Bevét/Kiadás sorok ====== */
     const inRowsTbody  = document.getElementById('tbody-in-rows');
     const outRowsTbody = document.getElementById('tbody-out-rows');
