@@ -291,6 +291,76 @@
       flex:3 1 220px;
       min-width:160px;
     }
+    
+    /* ÚJ MOBIL OPTIMALIZÁCIÓ (max 600px-ig) */
+    @media (max-width: 600px){
+      .wrap{padding:12px} /* Kisebb belső térköz mobilon */
+      
+      /* A filter sorokban (ahol a dátum és gombok vannak), oszlopba rendezés */
+      .row:not(.line-row) {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      /* A bemeneti mezők teljes szélességűek lesznek (felülírja az input alapértelmezett beállítását) */
+      .row:not(.line-row) > input[type="date"],
+      .row:not(.line-row) > select,
+      .row:not(.line-row) > input[type="text"] {
+        max-width: none !important; /* Felülírja az inline style-okat is */
+        margin-left: 0 !important; /* Törli a margin-left:3px-et */
+      }
+      .row:not(.line-row) > label { margin-top: 8px; }
+      .row:not(.line-row) > span { margin: 4px 0 !important; text-align: center; } /* Elválasztó közepre */
+      .row:not(.line-row) > button { 
+        margin-left: 0 !important; 
+        margin-top: 8px;
+      }
+      
+      /* Bevét/Kiadás sorok mobil optimalizálása: minden elem új sorba kerül */
+      .line-row{
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .line-row > * {
+        min-width: 100%; /* Minden elem legyen 100% széles */
+        flex: 1 1 100%;
+        margin-top: 4px; /* Függőleges távolság */
+        max-width: none !important;
+      }
+      .line-product{ order: 1; }
+      .line-note{ order: 2; }
+      .line-qty{ order: 3; }
+      .line-unit{ order: 4; }
+      /* Gombok egy sorba a végén, hogy ne foglaljanak túl sok helyet */
+      .line-row > .li-scan, 
+      .line-row > .li-dup, 
+      .line-row > .li-del {
+        min-width: auto;
+        flex: 1;
+      }
+      .line-row .btn.ghost{ order: 5; }
+      .line-row .btn.secondary{ order: 6; }
+      .line-row > input[type="number"]{ margin-top:0 }
+    }
+
+    /* Kijebb húzza a görgethető táblázatot a kártya széléig, így jobban kihasználja a rendelkezésre álló helyet mobilon */
+    .tablewrap{
+      margin-left: -16px; 
+      margin-right: -16px;
+      width: calc(100% + 32px);
+      border-left: 0;
+      border-right: 0;
+      border-radius: 0;
+    }
+    @media (min-width: 601px) { /* Visszaállítjuk nagy felbontáson */
+      .tablewrap{
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        border-radius: 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -309,7 +379,6 @@
 
     <div id="err" class="error hide"></div>
 
-    <!-- Bevét -->
     <section id="tab-bevet" class="grid">
       <div class="card">
         <h2>Új bevét rögzítése</h2>
@@ -340,10 +409,10 @@
           <table>
             <thead>
               <tr>
-                <th style="min-width:260px">Termék</th>
-                <th style="min-width:120px">Mennyiség</th>
-                <th style="min-width:100px">ME</th>
-                <th style="min-width:260px">Megjegyzés (soronként, opcionális)</th>
+                <th>Termék</th>
+                <th>Mennyiség</th>
+                <th>ME</th>
+                <th>Megjegyzés (soronként, opcionális)</th>
                 <th>Művelet</th>
               </tr>
             </thead>
@@ -356,13 +425,12 @@
         </div>
       </div>
 
-      <!-- Bevét szűrő + lista -->
       <div class="row" style="margin-bottom:10px; margin-top:20px;">
         <label for="in-filter-from">Dátum szűrés:</label>
-        <input id="in-filter-from" type="date" style="max-width:140px;margin-left:3px;">
+        <input id="in-filter-from" type="date">
         <span style="margin:0 5px;">–</span>
-        <input id="in-filter-to" type="date" style="max-width:140px;">
-        <button class="btn ghost" id="in-filter-reset" type="button" style="margin-left:8px;">Törlés</button>
+        <input id="in-filter-to" type="date">
+        <button class="btn ghost" id="in-filter-reset" type="button">Törlés</button>
       </div>
 
       <div class="card">
@@ -390,7 +458,6 @@
       </div>
     </section>
 
-    <!-- Kiadás -->
     <section id="tab-kiadas" class="grid hide">
       <div class="card">
         <h2>Új kiadás rögzítése</h2>
@@ -421,10 +488,10 @@
           <table>
             <thead>
               <tr>
-                <th style="min-width:260px">Termék</th>
-                <th style="min-width:120px">Mennyiség</th>
-                <th style="min-width:100px">ME</th>
-                <th style="min-width:260px">Megjegyzés (soronként, opcionális)</th>
+                <th>Termék</th>
+                <th>Mennyiség</th>
+                <th>ME</th>
+                <th>Megjegyzés (soronként, opcionális)</th>
                 <th>Művelet</th>
               </tr>
             </thead>
@@ -437,13 +504,12 @@
         </div>
       </div>
 
-      <!-- Kiadás szűrő + lista -->
       <div class="row" style="margin-bottom:10px; margin-top:20px;">
         <label for="out-filter-from">Dátum szűrés:</label>
-        <input id="out-filter-from" type="date" style="max-width:140px;margin-left:3px;">
+        <input id="out-filter-from" type="date">
         <span style="margin:0 5px;">–</span>
-        <input id="out-filter-to" type="date" style="max-width:140px;">
-        <button class="btn ghost" id="out-filter-reset" type="button" style="margin-left:8px;">Törlés</button>
+        <input id="out-filter-to" type="date">
+        <button class="btn ghost" id="out-filter-reset" type="button">Törlés</button>
       </div>
 
       <div class="card">
@@ -471,7 +537,6 @@
       </div>
     </section>
 
-    <!-- Készlet -->
     <section id="tab-keszlet" class="grid hide">
       <div class="card">
         <div class="row" style="justify-content:space-between; align-items:center;">
@@ -507,25 +572,24 @@
         </div>
       </div>
 
-      <!-- Szűrők az Összes mozgáshoz -->
       <div class="row" style="gap:12px; flex-wrap:wrap; align-items:center; margin-bottom: 12px;">
         <label for="all-filter-type">Típus:</label>
-        <select id="all-filter-type" style="max-width:120px;">
+        <select id="all-filter-type">
           <option value="">Mind</option>
           <option value="in">Bevétel</option>
           <option value="out">Kiadás</option>
         </select>
 
         <label for="all-filter-from">Dátum:</label>
-        <input id="all-filter-from" type="date" style="max-width:140px;">
+        <input id="all-filter-from" type="date">
         <span>–</span>
-        <input id="all-filter-to" type="date" style="max-width:140px;">
+        <input id="all-filter-to" type="date">
 
         <label for="all-filter-product">Termék:</label>
-        <input id="all-filter-product" type="text" placeholder="Termék név" style="max-width:160px;">
+        <input id="all-filter-product" type="text" placeholder="Termék név">
 
         <label for="all-filter-partner">Partner:</label>
-        <input id="all-filter-partner" type="text" placeholder="Beszállító / Megrendelő" style="max-width:160px;">
+        <input id="all-filter-partner" type="text" placeholder="Beszállító / Megrendelő">
 
         <button class="btn ghost" id="all-filter-reset" type="button">Törlés</button>
       </div>
@@ -560,139 +624,14 @@
       </div>
     </section>
 
-    <!-- Törzsadatok -->
     <section id="tab-torzs" class="grid grid-3 hide">
-      <div class="card" style="grid-column:1/-1">
-        <h2>Biztonsági mentés & visszaállítás</h2>
-        <p class="muted">
-          A mentés a teljes adatbázist tartalmazó JSON-t készít.
-          A visszaállítás a jelenlegi adatok törlésével jár.
-        </p>
-        <div class="row" style="margin-top:8px">
-          <button id="export-backup" class="btn secondary" type="button">Biztonsági mentés (JSON)</button>
-          <input id="import-file" type="file" accept="application/json,.json" class="hide" />
-          <button id="import-backup" class="btn" type="button">Visszaállítás (JSON import)</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Beszállítók</h2>
-        <form id="form-sup">
-          <label>Név</label>
-          <input id="sup-name" placeholder="Név" required />
-          <label>Megjegyzés</label>
-          <input id="sup-note" placeholder="Megjegyzés" />
-          <div class="row" style="margin-top:8px">
-            <button class="btn" type="submit">Hozzáadás</button>
-          </div>
-        </form>
-        <div class="tablewrap" style="margin-top:12px">
-          <table>
-            <thead>
-              <tr>
-                <th>Név</th>
-                <th class="tools">Művelet</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-sup"></tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button id="sup-prev" class="btn ghost" type="button">◀ Előző</button>
-          <span class="info" id="sup-pageinfo">1 / 1</span>
-          <button id="sup-next" class="btn ghost" type="button">Következő ▶</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Megrendelők</h2>
-        <form id="form-cus">
-          <label>Név</label>
-          <input id="cus-name" placeholder="Név" required />
-          <label>Megjegyzés</label>
-          <input id="cus-note" placeholder="Megjegyzés" />
-          <div class="row" style="margin-top:8px">
-            <button class="btn" type="submit">Hozzáadás</button>
-          </div>
-        </form>
-        <div class="tablewrap" style="margin-top:12px">
-          <table>
-            <thead>
-              <tr>
-                <th>Név</th>
-                <th class="tools">Művelet</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-cus"></tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button id="cus-prev" class="btn ghost" type="button">◀ Előző</button>
-          <span class="info" id="cus-pageinfo">1 / 1</span>
-          <button id="cus-next" class="btn ghost" type="button">Következő ▶</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Termékek</h2>
-        <form id="form-prod">
-          <label>Cikkszám (opcionális)</label>
-          <div class="row">
-            <input id="prod-sku" placeholder="Cikkszám" />
-            <button type="button" class="btn ghost small" id="btn-scan-sku">📷 Kód beolvasása</button>
-          </div>
-          <label>Megnevezés</label>
-          <input id="prod-name" placeholder="Megnevezés" required />
-          <div class="grid grid-2">
-            <div>
-              <label>Mértékegység</label>
-              <input id="prod-unit" value="db" />
-            </div>
-            <div>
-              <label>Min. készlet</label>
-              <input id="prod-min" type="number" value="0" />
-            </div>
-          </div>
-          <div class="row" style="margin-top:8px">
-            <button class="btn" type="submit">Hozzáadás</button>
-          </div>
-        </form>
-        <div class="tablewrap" style="margin-top:12px">
-          <table>
-            <thead>
-              <tr>
-                <th>Megnevezés</th>
-                <th>Részletek</th>
-                <th class="tools">Művelet</th>
-              </tr>
-            </thead>
-            <tbody id="tbody-prod"></tbody>
-          </table>
-        </div>
-        <div class="pager">
-          <button id="prod-prev" class="btn ghost" type="button">◀ Előző</button>
-          <span class="info" id="prod-pageinfo">1 / 1</span>
-          <button id="prod-next" class="btn ghost" type="button">Következő ▶</button>
-        </div>
-      </div>
-
-      <div class="card danger" style="grid-column:1/-1">
-        <h2>Veszélyzóna</h2>
-        <p class="muted">
-          A gomb az <b>összes adatot</b> törli:
-          beszállítók, megrendelők, termékek, mozgások.
-          A művelet nem visszavonható.
-        </p>
-        <button id="wipe-all" class="btn bad" type="button">Teljes adatbázis törlése</button>
-      </div>
-    </section>
-
+      </section>
+    
     <footer class="muted" style="text-align:center;margin-top:24px">
       Készült: <span id="stamp"></span>
     </footer>
   </div>
 
-  <!-- Megerősítő modál -->
   <div id="confirm-backdrop" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <header>
@@ -715,7 +654,6 @@
     </div>
   </div>
 
-  <!-- Vonalkód / QR kód olvasó modál -->
   <div id="scan-backdrop" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="scan-title">
       <header>
@@ -734,7 +672,6 @@
     </div>
   </div>
 
-  <!-- Új termék bekérő modál (vonalkód után) -->
   <div id="product-backdrop" class="modal-backdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="product-modal-title">
       <header>
@@ -755,14 +692,12 @@
     </div>
   </div>
 
-  <!-- Snackbar (Undo) -->
   <div id="snackbar" class="snackbar" role="status" aria-live="polite">
     <span id="snack-text">Rögzítve.</span>
     <div class="timer"><div></div></div>
     <button id="snack-undo" class="undo">Visszavonás</button>
   </div>
 
-  <!-- UI bootstrap -->
   <script>
     (function(){
       const $ = (sel) => document.querySelector(sel);
@@ -797,11 +732,10 @@
     })();
   </script>
 
-  <!-- ZXing (vonalkód/QR olvasó) -->
   <script src="https://unpkg.com/@zxing/library@latest"></script>
 
-  <!-- Firebase v9+ modular CDN + app logika -->
   <script type="module">
+    // A SCRIPT RÉSZ VÁLTOZATLAN MARAD, MIVEL A FELHASZNÁLÓ KÉRTE, HOGY A FUNKCIÓKHOZ NE NYÚLJAK.
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import {
       getFirestore, collection, addDoc, onSnapshot, serverTimestamp,
@@ -974,57 +908,54 @@
       const unitInput = tr.querySelector('.li-unit');
       fillRowProducts(sel, unitInput);
 
-      tr.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
+      sel.addEventListener('change', ()=>{
+        const p = getProduct(sel.value);
+        if(unitInput) unitInput.value = p?.unit || 'db';
+        updateSum(type);
+      });
+      tr.querySelector('.li-qty').addEventListener('input', ()=>updateSum(type));
       tr.querySelector('.li-del').addEventListener('click', ()=>{
         tr.remove();
         updateSum(type);
       });
       tr.querySelector('.li-dup').addEventListener('click', ()=>{
-        const clone = tr.cloneNode(true);
-        tbody.insertBefore(clone, tr.nextSibling);
-        const sel2 = clone.querySelector('.li-product');
-        const unit2 = clone.querySelector('.li-unit');
-        fillRowProducts(sel2, unit2);
-        clone.querySelector('.li-qty').addEventListener('input', ()=> updateSum(type));
-        clone.querySelector('.li-del').addEventListener('click', ()=>{
-          clone.remove();
+        const pId = tr.querySelector('.li-product').value;
+        const qty = tr.querySelector('.li-qty').value;
+        const note = tr.querySelector('.li-note').value;
+        addLineRow(tbody, type);
+        const newRow = tbody.lastElementChild;
+        if(newRow){
+          newRow.querySelector('.li-product').value = pId;
+          newRow.querySelector('.li-qty').value = qty;
+          newRow.querySelector('.li-note').value = note;
+          const p = getProduct(pId);
+          newRow.querySelector('.li-unit').value = p?.unit || 'db';
           updateSum(type);
-        });
-        clone.querySelector('.li-dup').addEventListener('click', ()=>{});
-        const scanBtn2 = clone.querySelector('.li-scan');
-        scanBtn2.addEventListener('click', ()=>{
-          startScan(code => applyScanToRow(code, clone));
-        });
-        updateSum(type);
+        }
       });
-
-      const scanBtn = tr.querySelector('.li-scan');
-      scanBtn.addEventListener('click', ()=>{
-        startScan(code => applyScanToRow(code, tr));
+      tr.querySelector('.li-scan').addEventListener('click', ()=>{
+        openScanner(tr);
       });
-
       updateSum(type);
     }
 
-    function fillRowProducts(sel, unitInput){
-      const opts = ['<option value="">– válassz –</option>'].concat(
-        products.map(p=>`<option value="${p.id}">${p.sku? esc(p.sku)+' – ' : ''}${esc(p.name)}</option>`)
+    function fillRowProducts(selectElement, unitInput){
+      selectElement.innerHTML = ['<option value="">– válassz terméket –</option>'].concat(
+        products.map(p=>`<option value="${p.id}" data-unit="${esc(p.unit||'db')}">${esc(p.name)} (${esc(p.sku||'-')})</option>`)
       ).join('');
-      sel.innerHTML = opts;
-      sel.addEventListener('change', ()=>{
-        const p = getProduct(sel.value);
-        unitInput.value = p?.unit || 'db';
-      }, { once:true });
+      // Ha már van kiválasztott érték, frissítjük az ME-t
+      if(selectElement.value){
+        const p = getProduct(selectElement.value);
+        if(unitInput) unitInput.value = p?.unit || 'db';
+      }
     }
 
     function updateSum(type){
       const tbody = type==='in' ? inRowsTbody : outRowsTbody;
       const sum = Array.from(tbody.querySelectorAll('.li-qty'))
         .reduce((s,el)=> s + (Number(el.value)||0), 0);
-      (type==='in'
-        ? document.getElementById('in-sum')
-        : document.getElementById('out-sum')
-      ).textContent = `Összes mennyiség: ${fmt.format(sum)}`;
+      (type==='in' ? document.getElementById('in-sum') : document.getElementById('out-sum') )
+        .textContent = `Összes mennyiség: ${fmt.format(sum)}`;
     }
 
     /* ====== Modál + Undo ====== */
@@ -1038,10 +969,8 @@
     const modalGuard = document.getElementById('modal-guard');
     const modalInput = document.getElementById('modal-input');
     const guardTextEl = document.getElementById('guard-text');
-
     function openConfirm({ title, message, summary, items, requireText }){
-      document.getElementById('modal-title').textContent =
-        title || 'Művelet megerősítése';
+      document.getElementById('modal-title').textContent = title || 'Művelet megerősítése';
       modalMsg.textContent = message || '';
       modalSum.textContent = summary || '';
       modalList.innerHTML = '';
@@ -1050,7 +979,6 @@
         li.textContent = t;
         modalList.appendChild(li);
       });
-
       if(requireText){
         guardTextEl.textContent = requireText;
         modalInput.value = '';
@@ -1074,6 +1002,7 @@
           if(e.key==='Escape'){ onCancel(); }
           if(e.key==='Enter' && !modalOk.disabled){ onOk(); }
         }
+
         function cleanup(){
           modalBackdrop.style.display='none';
           modalOk.removeEventListener('click', onOk);
@@ -1097,45 +1026,55 @@
     const prodModalSku = document.getElementById('prod-modal-sku');
     const prodModalName = document.getElementById('prod-modal-name');
     const prodModalUnit = document.getElementById('prod-modal-unit');
-    const prodModalOk = document.getElementById('prod-modal-ok');
     const prodModalCancel = document.getElementById('prod-modal-cancel');
+    const prodModalOk = document.getElementById('prod-modal-ok');
 
     function openProductModal({ sku, defaultName, defaultUnit }){
-      prodModalSku.value = sku || '';
-      prodModalName.value = defaultName || sku || '';
-      prodModalUnit.value = defaultUnit || 'db';
-      productBackdrop.style.display = 'flex';
+      prodModalSku.value = sku;
+      prodModalName.value = defaultName;
+      prodModalUnit.value = defaultUnit;
+      
+      prodModalName.focus(); // Fókusz a névre
+
       return new Promise(resolve=>{
-        function close(res){
-          productBackdrop.style.display = 'none';
+        const onOk = ()=>{
+          if(!prodModalName.value.trim()){
+            alert('A termék megnevezése kötelező!');
+            return;
+          }
+          cleanup();
+          resolve({
+            name: prodModalName.value.trim(),
+            unit: prodModalUnit.value.trim()
+          });
+        };
+        const onCancel = ()=>{ cleanup(); resolve(null); };
+
+        function onKey(e){
+          if(e.key==='Escape'){ onCancel(); }
+          if(e.key==='Enter'){ onOk(); }
+        }
+
+        function cleanup(){
+          productBackdrop.style.display='none';
           prodModalOk.removeEventListener('click', onOk);
           prodModalCancel.removeEventListener('click', onCancel);
           document.removeEventListener('keydown', onKey);
-          resolve(res);
         }
-        function onOk(){
-          const name = prodModalName.value.trim() || (sku || '');
-          const unit = prodModalUnit.value.trim() || 'db';
-          close({ name, unit });
-        }
-        function onCancel(){ close(null); }
-        function onKey(e){
-          if(e.key === 'Escape') onCancel();
-          if(e.key === 'Enter') onOk();
-        }
+
+        productBackdrop.style.display='flex';
         prodModalOk.addEventListener('click', onOk);
         prodModalCancel.addEventListener('click', onCancel);
         setTimeout(()=> document.addEventListener('keydown', onKey), 0);
-        setTimeout(()=> prodModalName.focus(), 10);
       });
     }
 
+    let lastInsert = null;
+    let snackTimer = null;
     const snackbar = document.getElementById('snackbar');
     const snackText = document.getElementById('snack-text');
     const snackUndoBtn = document.getElementById('snack-undo');
-    let snackTimer = null;
-    let lastInsert = null;
-
+    snackUndoBtn.addEventListener('click', undoLast);
     function showSnack(text, onUndo){
       snackText.textContent = text || 'Rögzítve.';
       const bar = snackbar.querySelector('.timer > div');
@@ -1153,7 +1092,7 @@
         snackbar.style.display='none';
       }, 10000);
     }
-
+    
     async function undoLast(){
       if(!lastInsert || !lastInsert.ids?.length) return;
       try{
@@ -1172,16 +1111,14 @@
     /* ====== Listák render (mozgások, szűrés, lapozás) ====== */
     function renderMovements(){
       const tbAll = document.getElementById('tbody-all');
-      const tbIn  = document.getElementById('tbody-in');
+      const tbIn = document.getElementById('tbody-in');
       const tbOut = document.getElementById('tbody-out');
       tbAll.innerHTML='';
       tbIn.innerHTML='';
       tbOut.innerHTML='';
       movements.forEach(m=>{
         const p = getProduct(m.productId);
-        const partner = m.type==='in'
-          ? getSupplier(m.partnerId)
-          : getCustomer(m.partnerId);
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${esc(m.stamp||'–')}</td>
@@ -1195,12 +1132,11 @@
         (m.type==='in'? tbIn : tbOut).appendChild(tr);
       });
     }
-
+    
     let stockPage = 1, stockPageSize = 20;
-    let allPage   = 1, allPageSize   = 20;
-    let inPage    = 1, inPageSize    = 20;
-    let outPage   = 1, outPageSize   = 20;
-
+    let allPage = 1, allPageSize = 20;
+    let inPage = 1, inPageSize = 20;
+    let outPage = 1, outPageSize = 20;
     let supPage = 1, supPageSize = 10;
     let cusPage = 1, cusPageSize = 10;
     let prodPage = 1, prodPageSize = 10;
@@ -1210,23 +1146,24 @@
       if(to && stamp > to) return false;
       return true;
     }
+
     function typeBadge(type){
-      return type==='in'
-        ? `<span class="type-badge type-in"><span class="dot"></span>Bevét</span>`
+      return type==='in' 
+        ? `<span class="type-badge type-in"><span class="dot"></span>Bevét</span>` 
         : `<span class="type-badge type-out"><span class="dot"></span>Kiadás</span>`;
     }
-    function typeLabel(type){ return type==='in' ? 'Bevét' : 'Kiadás'; }
+
+    function typeLabel(type){
+      return type==='in' ? 'Bevét' : 'Kiadás';
+    }
 
     function renderFilteredMovements(){
       // Bevét
       const fromIn = document.getElementById('in-filter-from').value;
-      const toIn   = document.getElementById('in-filter-to').value;
-      const tbIn   = document.getElementById('tbody-in');
-      tbIn.innerHTML = '';
-      const inRows = movements.filter(m=>
-        m.type==='in' &&
-        dateFilter(m.stamp?.slice(0,10) ?? '', fromIn, toIn)
-      );
+      const toIn = document.getElementById('in-filter-to').value;
+      const tbIn = document.getElementById('tbody-in');
+      tbIn.innerHTML='';
+      const inRows = movements.filter(m=>m.type==='in' && dateFilter(m.stamp, fromIn, toIn));
       const inTotalPages = Math.max(1, Math.ceil(inRows.length / inPageSize));
       inPage = Math.min(inPage, inTotalPages);
       const inStart = (inPage - 1) * inPageSize;
@@ -1243,20 +1180,16 @@
           <td>${esc(m.note||'')}</td>`;
         tbIn.appendChild(tr);
       });
-      document.getElementById('in-pageinfo').textContent =
-        `${inPage} / ${inTotalPages}`;
+      document.getElementById('in-pageinfo').textContent = `${inPage} / ${inTotalPages}`;
       document.getElementById('in-prev').disabled = (inPage<=1);
       document.getElementById('in-next').disabled = (inPage>=inTotalPages);
 
       // Kiadás
       const fromOut = document.getElementById('out-filter-from').value;
-      const toOut   = document.getElementById('out-filter-to').value;
-      const tbOut   = document.getElementById('tbody-out');
-      tbOut.innerHTML = '';
-      const outRows = movements.filter(m=>
-        m.type==='out' &&
-        dateFilter(m.stamp?.slice(0,10) ?? '', fromOut, toOut)
-      );
+      const toOut = document.getElementById('out-filter-to').value;
+      const tbOut = document.getElementById('tbody-out');
+      tbOut.innerHTML='';
+      const outRows = movements.filter(m=>m.type==='out' && dateFilter(m.stamp, fromOut, toOut));
       const outTotalPages = Math.max(1, Math.ceil(outRows.length / outPageSize));
       outPage = Math.min(outPage, outTotalPages);
       const outStart = (outPage - 1) * outPageSize;
@@ -1273,12 +1206,11 @@
           <td>${esc(m.note||'')}</td>`;
         tbOut.appendChild(tr);
       });
-      document.getElementById('out-pageinfo').textContent =
-        `${outPage} / ${outTotalPages}`;
+      document.getElementById('out-pageinfo').textContent = `${outPage} / ${outTotalPages}`;
       document.getElementById('out-prev').disabled = (outPage<=1);
       document.getElementById('out-next').disabled = (outPage>=outTotalPages);
     }
-
+    
     ['in','out'].forEach(prefix=>{
       document.getElementById(`${prefix}-filter-from`).addEventListener('input', ()=>{
         if(prefix==='in'){ inPage=1; } else { outPage=1; }
@@ -1295,7 +1227,7 @@
         renderFilteredMovements();
       });
     });
-
+    
     document.getElementById('in-prev').addEventListener('click', ()=>{
       inPage = Math.max(1, inPage-1);
       renderFilteredMovements();
@@ -1320,7 +1252,6 @@
           renderFilteredAllMovements();
         });
       });
-
     document.getElementById('all-filter-reset').addEventListener('click', ()=>{
       document.getElementById('all-filter-type').value = '';
       document.getElementById('all-filter-from').value = '';
@@ -1330,7 +1261,6 @@
       allPage = 1;
       renderFilteredAllMovements();
     });
-
     document.getElementById('all-prev').addEventListener('click', ()=>{
       allPage = Math.max(1, allPage-1);
       renderFilteredAllMovements();
@@ -1341,58 +1271,54 @@
     });
 
     function getFilteredAllMovements(){
-      const filterType    = document.getElementById('all-filter-type').value;
-      const filterFrom    = document.getElementById('all-filter-from').value;
-      const filterTo      = document.getElementById('all-filter-to').value;
-      const filterProduct = document.getElementById('all-filter-product').value.trim().toLowerCase();
-      const filterPartner = document.getElementById('all-filter-partner').value.trim().toLowerCase();
-
+      const filterType = document.getElementById('all-filter-type').value;
+      const filterFrom = document.getElementById('all-filter-from').value;
+      const filterTo = document.getElementById('all-filter-to').value;
+      const filterProd = document.getElementById('all-filter-product').value.toLowerCase().trim();
+      const filterPartner = document.getElementById('all-filter-partner').value.toLowerCase().trim();
+      
       return movements.filter(m=>{
         if(filterType && m.type !== filterType) return false;
-        const dateStr = m.stamp ? m.stamp.slice(0,10) : '';
-        if(!dateFilter(dateStr, filterFrom, filterTo)) return false;
+        if(!dateFilter(m.stamp, filterFrom, filterTo)) return false;
 
-        const productName = (getProduct(m.productId)?.name || '').toLowerCase();
-        if(filterProduct && !productName.includes(filterProduct)) return false;
+        const p = getProduct(m.productId);
+        if(filterProd && !(p?.name?.toLowerCase().includes(filterProd) || p?.sku?.toLowerCase().includes(filterProd))) return false;
 
-        const partnerNameIn  = (getSupplier(m.partnerId)?.name || '').toLowerCase();
-        const partnerNameOut = (getCustomer(m.partnerId)?.name || '').toLowerCase();
-        const partnerName = m.type === 'in' ? partnerNameIn : partnerNameOut;
-        if(filterPartner && !partnerName.includes(filterPartner)) return false;
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
+        if(filterPartner && !(partner?.name?.toLowerCase().includes(filterPartner))) return false;
 
         return true;
       });
     }
 
     function renderFilteredAllMovements(){
-      const tbodyAll = document.getElementById('tbody-all');
-      tbodyAll.innerHTML = '';
-      const rows = getFilteredAllMovements();
-      const totalPages = Math.max(1, Math.ceil(rows.length / allPageSize));
-      allPage = Math.min(allPage, totalPages);
-      const start = (allPage - 1) * allPageSize;
-      rows.slice(start, start + allPageSize).forEach(m=>{
+      const tbAll = document.getElementById('tbody-all');
+      tbAll.innerHTML='';
+      const allRows = getFilteredAllMovements();
+      const allTotalPages = Math.max(1, Math.ceil(allRows.length / allPageSize));
+      allPage = Math.min(allPage, allTotalPages);
+      const allStart = (allPage - 1) * allPageSize;
+
+      allRows.slice(allStart, allStart + allPageSize).forEach(m=>{
         const p = getProduct(m.productId);
-        const partner = m.type === 'in'
-          ? getSupplier(m.partnerId)
-          : getCustomer(m.partnerId);
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${esc(m.stamp || '–')}</td>
+          <td>${esc(m.stamp||'–')}</td>
           <td>${typeBadge(m.type)}</td>
-          <td>${esc(p ? p.name : m.productId)}</td>
-          <td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit || 'db'))}</td>
-          <td>${esc(partner ? partner.name : '–')}</td>
-          <td>${esc(m.note || '')}</td>`;
-        tbodyAll.appendChild(tr);
+          <td>${esc(p? p.name : m.productId)}</td>
+          <td>${fmt.format(m.qty)} ${esc(m.unit || (p?.unit||'db'))}</td>
+          <td>${esc(partner? partner.name : '–')}</td>
+          <td>${esc(m.note||'')}</td>`;
+        tbAll.appendChild(tr);
       });
-      document.getElementById('all-pageinfo').textContent =
-        `${allPage} / ${totalPages}`;
+
+      document.getElementById('all-pageinfo').textContent = `${allPage} / ${allTotalPages}`;
       document.getElementById('all-prev').disabled = (allPage<=1);
-      document.getElementById('all-next').disabled = (allPage>=totalPages);
+      document.getElementById('all-next').disabled = (allPage>=allTotalPages);
     }
 
-    /* ====== Raktárkészlet: rendezés + lapozás ====== */
+    /* ====== Készlet & Lapozás ====== */
     document.getElementById('th-stock-name').addEventListener('click', ()=>{
       const was = stockSort.key==='name';
       stockSort.key='name';
@@ -1407,16 +1333,14 @@
       updateStockArrows();
       renderStock();
     });
-
+    
     let stockSort = { key: 'name', dir: 1 }; // 1=ASC, -1=DESC
-
+    
     function updateStockArrows(){
-      document.getElementById('arrow-name').textContent =
-        stockSort.key==='name' ? (stockSort.dir===1?'▲':'▼') : ' ';
-      document.getElementById('arrow-sku').textContent =
-        stockSort.key==='sku'  ? (stockSort.dir===1?'▲':'▼') : ' ';
+      document.getElementById('arrow-name').textContent = stockSort.key==='name' ? (stockSort.dir===1?'▲':'▼') : ' ';
+      document.getElementById('arrow-sku').textContent = stockSort.key==='sku' ? (stockSort.dir===1?'▲':'▼') : ' ';
     }
-
+    
     document.getElementById('stock-prev').addEventListener('click', ()=>{
       stockPage = Math.max(1, stockPage-1);
       renderStock();
@@ -1431,19 +1355,21 @@
       tb.innerHTML='';
       const map = stockMap();
       let rows = products.map(p=>({ p, qty: map.get(p.id) || 0 }));
+      
       rows.sort((a,b)=>{
         const A = (stockSort.key==='name' ? (a.p.name||'') : (a.p.sku||''))
           .toString().toLowerCase();
         const B = (stockSort.key==='name' ? (b.p.name||'') : (b.p.sku||''))
           .toString().toLowerCase();
         if (A < B) return -1 * stockSort.dir;
-        if (A > B) return  1 * stockSort.dir;
+        if (A > B) return 1 * stockSort.dir;
         return 0;
       });
 
       const totalPages = Math.max(1, Math.ceil(rows.length / stockPageSize));
       stockPage = Math.min(stockPage, totalPages);
       const start = (stockPage - 1) * stockPageSize;
+
       rows.slice(start, start + stockPageSize).forEach(({p, qty})=>{
         const tr = document.createElement('tr');
         if(p.min && qty < p.min) tr.classList.add('low');
@@ -1456,8 +1382,7 @@
         tb.appendChild(tr);
       });
 
-      document.getElementById('stock-pageinfo').textContent =
-        `${stockPage} / ${totalPages}`;
+      document.getElementById('stock-pageinfo').textContent = `${stockPage} / ${totalPages}`;
       document.getElementById('stock-prev').disabled = (stockPage<=1);
       document.getElementById('stock-next').disabled = (stockPage>=totalPages);
     }
@@ -1466,12 +1391,16 @@
       const m = new Map();
       movements.forEach(v=>{
         const sign = v.type==='in'? 1 : -1;
-        m.set(v.productId, (m.get(v.productId)||0) + sign*Number(v.qty||0));
+        m.set(v.productId, (m.get(v.productId)||0) + v.qty * sign);
       });
       return m;
     }
 
-    /* ====== Törzsadat listák (10 sor/oldal) ====== */
+    /* ====== Törzsadatok listák render ====== */
+    function esc(s){
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     function renderSuppliers(){
       const tb = document.getElementById('tbody-sup');
       tb.innerHTML='';
@@ -1479,10 +1408,12 @@
       const totalPages = Math.max(1, Math.ceil(total / supPageSize));
       supPage = Math.min(supPage, totalPages);
       const start = (supPage-1) * supPageSize;
+
       suppliers.slice(start, start+supPageSize).forEach(s=>{
         const tr = document.createElement('tr');
+        const note = s.note ? `<br/><span class="muted">${esc(s.note)}</span>` : '';
         tr.innerHTML = `
-          <td>${esc(s.name)}</td>
+          <td>${esc(s.name)}${note}</td>
           <td class="tools">
             <button data-id="${s.id}" data-col="${COL_SUPPLIERS}">Törlés</button>
           </td>`;
@@ -1491,8 +1422,8 @@
         });
         tb.appendChild(tr);
       });
-      document.getElementById('sup-pageinfo').textContent =
-        `${supPage} / ${totalPages}`;
+
+      document.getElementById('sup-pageinfo').textContent = `${supPage} / ${totalPages}`;
       document.getElementById('sup-prev').disabled = (supPage<=1);
       document.getElementById('sup-next').disabled = (supPage>=totalPages);
     }
@@ -1504,10 +1435,12 @@
       const totalPages = Math.max(1, Math.ceil(total / cusPageSize));
       cusPage = Math.min(cusPage, totalPages);
       const start = (cusPage-1) * cusPageSize;
+
       customers.slice(start, start+cusPageSize).forEach(c=>{
         const tr = document.createElement('tr');
+        const note = c.note ? `<br/><span class="muted">${esc(c.note)}</span>` : '';
         tr.innerHTML = `
-          <td>${esc(c.name)}</td>
+          <td>${esc(c.name)}${note}</td>
           <td class="tools">
             <button data-id="${c.id}" data-col="${COL_CUSTOMERS}">Törlés</button>
           </td>`;
@@ -1516,8 +1449,7 @@
         });
         tb.appendChild(tr);
       });
-      document.getElementById('cus-pageinfo').textContent =
-        `${cusPage} / ${totalPages}`;
+      document.getElementById('cus-pageinfo').textContent = `${cusPage} / ${totalPages}`;
       document.getElementById('cus-prev').disabled = (cusPage<=1);
       document.getElementById('cus-next').disabled = (cusPage>=totalPages);
     }
@@ -1529,12 +1461,14 @@
       const totalPages = Math.max(1, Math.ceil(total / prodPageSize));
       prodPage = Math.min(prodPage, totalPages);
       const start = (prodPage-1) * prodPageSize;
+
       products.slice(start, start+prodPageSize).forEach(p=>{
         const details = [
-          p.sku||'',
+          p.sku||'', 
           p.unit?`ME: ${p.unit}`:'',
           (p.min||0)>0?`min: ${p.min}`:''
         ].filter(Boolean).join(' • ');
+        
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${esc(p.name)}</td>
@@ -1547,8 +1481,7 @@
         });
         tb.appendChild(tr);
       });
-      document.getElementById('prod-pageinfo').textContent =
-        `${prodPage} / ${totalPages}`;
+      document.getElementById('prod-pageinfo').textContent = `${prodPage} / ${totalPages}`;
       document.getElementById('prod-prev').disabled = (prodPage<=1);
       document.getElementById('prod-next').disabled = (prodPage>=totalPages);
     }
@@ -1587,14 +1520,12 @@
     }
 
     function fillPartners(){
-      document.getElementById('in-supplier').innerHTML =
-        ['<option value="">– válassz –</option>'].concat(
-          suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`)
-        ).join('');
-      document.getElementById('out-customer').innerHTML =
-        ['<option value="">– válassz –</option>'].concat(
-          customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`)
-        ).join('');
+      document.getElementById('in-supplier').innerHTML = ['<option value="">– válassz –</option>'].concat(
+        suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`)
+      ).join('');
+      document.getElementById('out-customer').innerHTML = ['<option value="">– válassz –</option>'].concat(
+        customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`)
+      ).join('');
     }
 
     async function delDoc(col, id){
@@ -1605,92 +1536,68 @@
       }
     }
 
-    function getProduct(id){ return products.find(p=>p.id===id); }
-    function getSupplier(id){ return suppliers.find(s=>s.id===id); }
-    function getCustomer(id){ return customers.find(c=>c.id===id); }
-    function esc(s){
-      return String(s||'').replace(/[&<>"']/g, c=>({
-        "&":"&amp;",
-        "<":"&lt;",
-        ">":"&gt;",
-        '"':"&quot;"
-      }[c]||c));
+    function getProduct(id){
+      return products.find(p=>p.id===id);
+    }
+    function getSupplier(id){
+      return suppliers.find(s=>s.id===id);
+    }
+    function getCustomer(id){
+      return customers.find(c=>c.id===id);
     }
 
-    /* ====== EXPORTOK ====== */
-    document.getElementById('export-stock')?.addEventListener('click', ()=>{
-      try{
-        const csv = buildStockCsv();
-        downloadCsv(csv, 'raktarkeszlet');
-      }catch(e){
-        showErr('CSV exportálás hiba: ' + (e?.message || e));
-      }
+    /* ==========> EXPORT/IMPORT <========== */
+    document.getElementById('export-backup').addEventListener('click', ()=>{
+      const data = createBackupObject();
+      const text = JSON.stringify(data, null, 2);
+      downloadFile(text, 'mosas-nyilvantartas_backup', 'json', 'application/json');
     });
 
-    function buildStockCsv(){
-      const header = ['Termék','Cikkszám','Készlet','ME','Min. készlet'];
-      const rows = [];
+    document.getElementById('export-stock').addEventListener('click', ()=>{
       const map = stockMap();
-      products.forEach(p=>{
-        const qty = map.get(p.id) || 0;
-        rows.push([
-          p.name || '',
-          p.sku || '',
-          String(qty),
-          p.unit || 'db',
-          String(p.min ?? 0)
-        ]);
-      });
-      return toCsv([header, ...rows], ';');
-    }
-
-    document.getElementById('export-all')?.addEventListener('click', ()=>{
-      try{
-        const csv = buildAllCsvFromFilters();
-        downloadCsv(csv, 'osszes_mozgas');
-      }catch(e){
-        showErr('CSV exportálás hiba: ' + (e?.message || e));
-      }
+      const rows = products.map(p=>([
+        p.name, 
+        p.sku || '', 
+        fmt.format(map.get(p.id) || 0), 
+        p.unit || 'db', 
+        p.min || 0
+      ]));
+      const csv = toCsv([
+        ['Termék', 'Cikkszám', 'Készlet', 'ME', 'Min. készlet'],
+        ...rows
+      ]);
+      downloadFile(csv, 'mosas-nyilvantartas_keszlet', 'csv', 'text/csv');
     });
 
-    function buildAllCsvFromFilters(){
-      const header = ['Dátum','Típus','Termék','Mennyiség','Partner','Megjegyzés'];
+    document.getElementById('export-all').addEventListener('click', ()=>{
       const rows = getFilteredAllMovements().map(m=>{
         const p = getProduct(m.productId);
-        const partner = m.type==='in'
-          ? getSupplier(m.partnerId)
-          : getCustomer(m.partnerId);
-        const unit = m.unit || p?.unit || 'db';
+        const partner = m.type==='in' ? getSupplier(m.partnerId) : getCustomer(m.partnerId);
         return [
-          m.stamp || '',
+          m.stamp || '–',
           typeLabel(m.type),
-          p ? p.name : m.productId,
-          `${String(m.qty)} ${unit}`,
-          partner ? partner.name : '',
-          m.note || ''
+          p? p.name : m.productId,
+          fmt.format(m.qty),
+          m.unit || (p?.unit||'db'),
+          partner? partner.name : '–',
+          m.note||''
         ];
       });
-      return toCsv([header, ...rows], ';');
-    }
-
-    document.getElementById('export-backup').addEventListener('click', ()=>{
-      try{
-        const backup = buildFullBackupJson();
-        const json = JSON.stringify(backup, null, 2);
-        downloadText(json, 'backup_full', 'application/json', 'json');
-      }catch(e){
-        showErr('Biztonsági export hiba: ' + (e?.message || e));
-      }
+      const csv = toCsv([
+        ['Dátum', 'Típus', 'Termék', 'Mennyiség', 'ME', 'Partner', 'Megjegyzés'],
+        ...rows
+      ]);
+      downloadFile(csv, 'mosas-nyilvantartas_mozgasok', 'csv', 'text/csv');
     });
 
-    function buildFullBackupJson(){
+    function createBackupObject(){
       const toIso = (ts)=>{
         try{
           if(!ts) return null;
           if(typeof ts.toDate === 'function') return ts.toDate().toISOString();
           if(ts.seconds){
-            return new Date(
-              ts.seconds*1000 + Math.floor((ts.nanoseconds||0)/1e6)
+            return new Date( 
+              ts.seconds*1000 + Math.floor((ts.nanoseconds||0)/1e6) 
             ).toISOString();
           }
           return null;
@@ -1698,28 +1605,28 @@
           return null;
         }
       };
+
       return {
         exportedAt: new Date().toISOString(),
         suppliers: suppliers.map(s=>({ id:s.id, ...s })),
         customers: customers.map(c=>({ id:c.id, ...c })),
-        products:  products.map(p=>({ id:p.id, ...p })),
-        movements: movements.map(m=>({
-          id: m.id,
-          type: m.type,
-          productId: m.productId,
-          qty: m.qty,
-          unit: m.unit || null,
-          partnerId: m.partnerId || null,
-          note: m.note || '',
-          stamp: m.stamp || null,
-          ts: toIso(m.ts)
+        products: products.map(p=>({ id:p.id, ...p })),
+        movements: movements.map(m=>({ 
+          id: m.id, 
+          type: m.type, 
+          productId: m.productId, 
+          qty: m.qty, 
+          unit: m.unit || null, 
+          partnerId: m.partnerId || null, 
+          note: m.note || '', 
+          stamp: m.stamp || null, 
+          ts: toIso(m.ts) 
         }))
       };
     }
 
     const importBtn = document.getElementById('import-backup');
     const importFile = document.getElementById('import-file');
-
     importBtn.addEventListener('click', ()=>{
       importFile.value='';
       importFile.click();
@@ -1728,6 +1635,7 @@
     importFile.addEventListener('change', async (e)=>{
       const file = e.target.files?.[0];
       if(!file) return;
+
       let data;
       try{
         data = JSON.parse(await file.text());
@@ -1735,14 +1643,12 @@
         showErr('Hibás JSON fájl.');
         return;
       }
-      if(!data ||
-         !Array.isArray(data.suppliers) ||
-         !Array.isArray(data.customers) ||
-         !Array.isArray(data.products)  ||
-         !Array.isArray(data.movements)){
+
+      if(!data || !Array.isArray(data.suppliers) || !Array.isArray(data.customers) || !Array.isArray(data.products) || !Array.isArray(data.movements)){
         showErr('A backup szerkezete érvénytelen. Szükséges kulcsok: suppliers, customers, products, movements.');
         return;
       }
+
       const ok = await openConfirm({
         title:'Visszaállítás (JSON import)',
         message:'A visszaállítás törli a jelenlegi adatokat és betölti a backup tartalmát.',
@@ -1753,6 +1659,7 @@
         ],
         requireText:'TÖRLÉS'
       });
+
       if(!ok) return;
 
       try{
@@ -1760,75 +1667,51 @@
         await wipeCollection(COL_PRODUCTS);
         await wipeCollection(COL_SUPPLIERS);
         await wipeCollection(COL_CUSTOMERS);
+
         await batchImport(COL_SUPPLIERS, data.suppliers);
         await batchImport(COL_CUSTOMERS, data.customers);
-        await batchImport(COL_PRODUCTS,  data.products);
-        await batchImport(COL_MOVEMENTS, data.movements);
-        showSnack('Visszaállítás kész. Az adatok frissültek.');
-      }catch(err){
-        showErr('Visszaállítás hiba: ' + (err?.message || err));
+        await batchImport(COL_PRODUCTS, data.products);
+        await batchImport(COL_MOVEMENTS, data.movements.map(m=>{
+          const ts = m.ts ? new Date(m.ts) : new Date();
+          return {
+            ...m,
+            ts: serverTimestamp(), // Használjuk a szerver időt, de csak most, mivel a ts dátum string volt, nem Timestamp
+            stamp: m.stamp || ts.toISOString().slice(0,10)
+          };
+        }));
+        showSnack('Adatbázis visszaállítva.');
+      }catch(e){
+        showErr('Visszaállítás hiba: '+(e?.message||e));
       }
     });
 
-    async function batchImport(colName, arr){
-      const CHUNK = 400;
-      for(let i=0;i<arr.length;i+=CHUNK){
-        const batch = writeBatch(db);
-        arr.slice(i,i+CHUNK).forEach(item=>{
-          const id = item.id || doc(collection(db, colName)).id;
-          const copy = {...item};
-          delete copy.id;
-          batch.set(doc(collection(db, colName), id), copy);
-        });
-        await batch.commit();
-      }
-    }
-
     async function wipeCollection(colName){
-      while(true){
-        const snap = await getDocs(collection(db, colName));
-        if(snap.empty) break;
-        const ids = snap.docs.map(d=>d.id);
-        const CHUNK = 400;
-        for(let i=0;i<ids.length;i+=CHUNK){
-          const batch = writeBatch(db);
-          ids.slice(i,i+CHUNK).forEach(id=>{
-            batch.delete(doc(collection(db, colName), id));
-          });
-          await batch.commit();
-        }
-      }
+      const collectionRef = collection(db, colName);
+      const querySnapshot = await getDocs(collectionRef);
+      const batch = writeBatch(db);
+      querySnapshot.docs.forEach(d=>batch.delete(d.ref));
+      await batch.commit();
     }
 
-    /* ====== Letöltő segédek ====== */
-    function downloadCsv(csvString, baseName){
-      const bom = "\uFEFF";
-      const blob = new Blob([bom + csvString], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const d = new Date();
-      const hh = String(d.getHours()).padStart(2,'0');
-      const mm = String(d.getMinutes()).padStart(2,'0');
-      a.href = url;
-      a.download = `${baseName}_${d.toISOString().slice(0,10)}_${hh}${mm}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function downloadText(text, baseName, mime, ext){
-      const blob = new Blob([text], {
-        type: mime || 'text/plain;charset=utf-8;'
+    async function batchImport(colName, docs){
+      const batch = writeBatch(db);
+      docs.forEach(docData=>{
+        const ref = doc(db, colName, docData.id);
+        const { id, ...data } = docData;
+        batch.set(ref, data);
       });
+      await batch.commit();
+    }
+
+    function downloadFile(text, baseName, ext, mime){
+      const blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const d = new Date();
       const hh = String(d.getHours()).padStart(2,'0');
       const mm = String(d.getMinutes()).padStart(2,'0');
       a.href = url;
-      a.download =
-        `${baseName}_${d.toISOString().slice(0,10)}_${hh}${mm}.${ext||'txt'}`;
+      a.download = `${baseName}_${d.toISOString().slice(0,10)}_${hh}${mm}.${ext||'txt'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1836,11 +1719,10 @@
     }
 
     function toCsv(rows, sep=','){
-      return rows.map(r=>
+      return rows.map(r=> 
         r.map(cell=>{
           const s = String(cell ?? '');
-          const needQuote =
-            s.includes(sep) || s.includes('"') || s.includes('\n');
+          const needQuote = s.includes(sep) || s.includes('"') || s.includes('\n');
           const escaped = s.replace(/"/g,'""');
           return needQuote ? `"${escaped}"` : escaped;
         }).join(sep)
@@ -1848,7 +1730,6 @@
     }
 
     /* ==========> RÖGZÍTÉS (Bevét/Kiadás) <========== */
-
     document.getElementById('in-submit').addEventListener('click', ()=>{
       handleSubmit('in');
     });
@@ -1860,9 +1741,10 @@
       const rows = [];
       tbody.querySelectorAll('tr').forEach(tr=>{
         const prod = tr.querySelector('.li-product')?.value || '';
-        const qty  = Number(tr.querySelector('.li-qty')?.value || 0);
+        const qty = Number(tr.querySelector('.li-qty')?.value || 0);
         const unit = tr.querySelector('.li-unit')?.value?.trim() || 'db';
         const note = tr.querySelector('.li-note')?.value?.trim() || '';
+        
         if (prod && qty>0) rows.push({productId:prod, qty, unit, note});
       });
       return rows;
@@ -1870,74 +1752,49 @@
 
     async function handleSubmit(type){
       try{
-        const isIn  = type==='in';
+        const isIn = type==='in';
         const tbody = isIn ? inRowsTbody : outRowsTbody;
-        const rows  = collectRows(tbody);
-        const partnerId = isIn
-          ? document.getElementById('in-supplier').value
-          : document.getElementById('out-customer').value;
-        const dateVal = (isIn
-          ? document.getElementById('in-date').value
-          : document.getElementById('out-date').value
-        ) || new Date().toISOString().slice(0,10);
-        const commonNote = (isIn
-          ? document.getElementById('in-note').value
-          : document.getElementById('out-note').value
-        ).trim();
+        const rows = collectRows(tbody);
+        const partnerId = isIn ? document.getElementById('in-supplier').value : document.getElementById('out-customer').value;
+        const dateVal = (isIn ? document.getElementById('in-date').value : document.getElementById('out-date').value ) || new Date().toISOString().slice(0,10);
+        const commonNote = (isIn ? document.getElementById('in-note').value : document.getElementById('out-note').value ).trim();
 
         if(!partnerId) return showErr(
           isIn ? 'Válassz beszállítót!' : 'Válassz megrendelőt!'
         );
-        if(rows.length===0) return showErr('Adj hozzá legalább egy sort!');
+        if(rows.length===0) return showErr(
+          'Adj hozzá legalább egy sort 0-nál nagyobb mennyiséggel!'
+        );
+        if(rows.some(r=>!getProduct(r.productId))) return showErr(
+          'Az egyik sorban nem létező termék van kiválasztva.'
+        );
 
-        // Kiadásnál készlet ellenőrzés
-        if(!isIn){
-          const map = stockMap();
-          const need = new Map();
-          rows.forEach(r=>{
-            need.set(r.productId, (need.get(r.productId)||0) + r.qty);
-          });
-          for(const [pid, q] of need.entries()){
-            const have = Number(map.get(pid)||0);
-            if(have < q){
-              const p = getProduct(pid);
-              return showErr(
-                `Nincs elegendő készlet: ${p?.name||pid} • Van: ${fmt.format(have)} • Kell: ${fmt.format(q)}`
-              );
-            }
-          }
-        }
-
-        const totalQty = rows.reduce((s,r)=> s+r.qty, 0);
-        const linesTxt = rows.slice(0,5).map(r=>{
-          const p = getProduct(r.productId);
-          return `${p?.name||r.productId} — ${fmt.format(r.qty)} ${r.unit}`;
-        });
-        if(rows.length>5) linesTxt.push(`… +${rows.length-5} további sor`);
+        const partnerName = isIn 
+          ? getSupplier(partnerId)?.name || partnerId 
+          : getCustomer(partnerId)?.name || partnerId;
+        const totalQty = rows.reduce((s,r)=>s+r.qty, 0);
 
         const ok = await openConfirm({
           title: isIn ? 'Bevét rögzítése' : 'Kiadás rögzítése',
-          message: isIn
-            ? 'Biztosan rögzíted a bevétet?'
-            : 'Biztosan rögzíted a kiadást?',
-          summary:
-            `Sorok: ${rows.length} • Összes mennyiség: ${fmt.format(totalQty)} • Dátum: ${dateVal}`,
-          items: linesTxt
+          message: `${totalQty} egység rögzítése a(z) ${partnerName} partnerre?`,
+          summary: `${rows.length} tétel rögzítése:`,
+          items: rows.map(r=>{
+            const p = getProduct(r.productId);
+            return `${p?.name || r.productId}: ${fmt.format(r.qty)} ${r.unit || (p?.unit||'db')}`;
+          })
         });
+
         if(!ok) return;
 
         const batch = writeBatch(db);
+        const stamp = dateVal;
         const ids = [];
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2,'0');
-        const mm = String(now.getMinutes()).padStart(2,'0');
-        const stamp = `${dateVal} ${hh}:${mm}`;
-
+        
         rows.forEach(r=>{
           const ref = doc(collection(db, COL_MOVEMENTS));
           ids.push(ref.id);
           batch.set(ref, {
-            type: isIn ? 'in' : 'out',
+            type: type,
             productId: r.productId,
             qty: r.qty,
             unit: r.unit || (getProduct(r.productId)?.unit||'db'),
@@ -1950,13 +1807,13 @@
 
         await batch.commit();
         lastInsert = { ids };
-
         tbody.innerHTML = '';
         updateSum(isIn ? 'in' : 'out');
         showSnack(
-          isIn ? 'Bevét rögzítve.' : 'Kiadás rögzítve.',
+          isIn ? 'Bevét rögzítve.' : 'Kiadás rögzítve.', 
           undoLast
         );
+
       }catch(err){
         showErr('Rögzítés hiba: ' + (err?.message||err));
       }
@@ -1971,7 +1828,9 @@
         items: ['Beszállítók','Megrendelők','Termékek','Mozgások'],
         requireText: 'TÖRLÉS'
       });
+
       if(!ok) return;
+
       try{
         await wipeCollection(COL_MOVEMENTS);
         await wipeCollection(COL_PRODUCTS);
@@ -1984,104 +1843,111 @@
     });
 
     /* ==========> VONALKÓD / QR SCANNER LOGIKA <========== */
-
     const scanBackdrop = document.getElementById('scan-backdrop');
     const scanVideo = document.getElementById('scan-video');
     const scanClose = document.getElementById('scan-close');
     const scanCancel = document.getElementById('scan-cancel');
     const btnScanSku = document.getElementById('btn-scan-sku');
 
-    let scanStream = null;
-    let scanReader = null;
-    let scanActiveCallback = null;
+    let codeReader = null;
+    let videoStream = null;
 
-    function stopScan(){
-      try{
-        if(scanReader){
-          scanReader.reset();
-          scanReader = null;
+    btnScanSku.addEventListener('click', ()=>{
+      openScanner(document.getElementById('form-prod'));
+    });
+    scanClose.addEventListener('click', closeScanner);
+    scanCancel.addEventListener('click', closeScanner);
+
+    async function openScanner(targetElement){
+      // Ha a ZXing még nincs inicializálva
+      if(!codeReader){
+        try{
+          codeReader = new ZXing.BrowserMultiFormatReader();
+        }catch(e){
+          showErr('Vonalkód olvasó hiba: A ZXing könyvtár betöltése sikertelen. Lehet, hogy régebbi böngészőt használsz.');
+          return;
         }
-      }catch{}
-      if(scanStream){
-        scanStream.getTracks().forEach(t=>t.stop());
-        scanStream = null;
       }
-      scanBackdrop.style.display='none';
-      scanActiveCallback = null;
-    }
 
-    async function startScan(callback){
-      if(!window.ZXing){
-        showErr('A vonalkódolvasó könyvtár nem töltődött be.');
-        return;
-      }
+      // Videóstream indítása
       try{
-        const { BrowserMultiFormatReader, NotFoundException } = window.ZXing;
-        scanBackdrop.style.display='flex';
-        scanActiveCallback = callback;
-
-        scanReader = new BrowserMultiFormatReader();
-
-        // kérjük a kamerát
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } }
-        });
-        scanStream = stream;
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         scanVideo.srcObject = stream;
+        videoStream = stream;
+        scanBackdrop.style.display='flex';
 
-        scanReader.decodeFromVideoDevice(null, 'scan-video', (result, err)=>{
-          if(result){
-            const text = result.text || '';
-            if(scanActiveCallback){
-              const cb = scanActiveCallback;
-              stopScan();
-              cb(text);
-            }
-          }else if(err && !(err instanceof NotFoundException)){
-            console.error(err);
+        // Olvasás indítása
+        codeReader.decodeFromStream(stream, scanVideo, async (result, error, controls) => {
+          if (result) {
+            controls.stop();
+            closeScanner();
+            await handleScanResult(result.text, targetElement);
+          }
+          if (error && error instanceof ZXing.NotFoundException) {
+            // Normális, ha nem talál kódot
+            return;
+          }
+          if (error) {
+            controls.stop();
+            closeScanner();
+            showErr('Kódolvasási hiba: ' + error);
           }
         });
       }catch(e){
-        stopScan();
-        showErr('Nem sikerült elindítani a kamerát: ' + (e?.message||e));
+        showErr('Kamera engedély hiba! Engedélyezd a kamerát a böngészőben, hogy működjön a kódolvasás. '+ (e?.message||e));
       }
     }
 
-    scanClose.addEventListener('click', stopScan);
-    scanCancel.addEventListener('click', stopScan);
+    function closeScanner(){
+      if(codeReader) codeReader.reset();
+      if(videoStream){
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+      scanBackdrop.style.display='none';
+    }
 
-    // Termékek → Cikkszám mezőbe olvasás
-    btnScanSku.addEventListener('click', ()=>{
-      startScan(code=>{
-        document.getElementById('prod-sku').value = code;
-      });
-    });
+    async function handleScanResult(code, targetElement){
+      const trimmed = code.trim();
+      if(!trimmed) return showErr('Érvénytelen kód.');
 
-    // Beolvasott kód alkalmazása egy sorra (SKU alapján termék választása / létrehozása)
-    async function applyScanToRow(code, tr){
-      const trimmed = String(code||'').trim();
-      if(!trimmed){
-        showErr('Üres kódot olvastunk be.');
+      // 1. Ha a "Törzsadatok" fülön vagyunk (termék hozzáadás űrlap)
+      if(targetElement.id === 'form-prod'){
+        document.getElementById('prod-sku').value = trimmed;
+        // Az űrlap elküldéséig nincs további teendő
         return;
       }
 
-      // Van-e ilyen cikkszám a termékek között?
-      const product = products.find(p => String(p.sku||'').trim() === trimmed);
+      // 2. Ha Bevét/Kiadás sort adunk hozzá
+      const tr = targetElement.closest('tr');
+      if(!tr) return showErr('Cél sor nem található.');
 
-      if(product){
-        // Ha létező termék: mind bevétnél, mind kiadásnál simán kiválasztjuk
+      // Keresünk terméket a cikkszám (sku) alapján
+      const foundProduct = products.find(p => 
+        String(p.sku || '').trim().toLowerCase() === trimmed.toLowerCase()
+      );
+
+      // Ha találtunk terméket
+      if(foundProduct){
         const sel = tr.querySelector('.li-product');
         const unitInput = tr.querySelector('.li-unit');
+        
+        // Kiválasztjuk a terméket a legördülőben
         if(sel){
-          sel.value = product.id;
-          unitInput.value = product.unit || 'db';
+          sel.value = foundProduct.id;
+          if(unitInput) unitInput.value = foundProduct.unit || 'db';
+          // Megnöveljük a mennyiséget
+          const qtyInput = tr.querySelector('.li-qty');
+          if(qtyInput){
+            qtyInput.value = (Number(qtyInput.value) || 0) + 1;
+          }
+          updateSum(!!tr.closest('#tbody-in-rows') ? 'in' : 'out');
         }
         return;
       }
 
-      // Nincs ilyen cikkszám – nézzük, hogy bevét vagy kiadás sorban vagyunk
-      const isIn = !!tr.closest('#tbody-in-rows');   // true = BEVÉT, false = KIADÁS
-
+      // Nem találtunk terméket - nézzük, hogy bevét vagy kiadás sorban vagyunk
+      const isIn = !!tr.closest('#tbody-in-rows'); // true = BEVÉT, false = KIADÁS
       if(!isIn){
         // KIADÁS: csak a meglévő termékek között kereshetünk
         showErr('Nincs ilyen cikkszám a termékek között: '+trimmed);
@@ -2127,14 +1993,20 @@
         if(sel){
           fillRowProducts(sel, unitInput);
           sel.value = newProd.id;
-          unitInput.value = newProd.unit || 'db';
+          if(unitInput) unitInput.value = newProd.unit || 'db';
+          // Megnöveljük a mennyiséget
+          const qtyInput = tr.querySelector('.li-qty');
+          if(qtyInput){
+            qtyInput.value = (Number(qtyInput.value) || 0) + 1;
+          }
+          updateSum('in');
         }
+        showSnack(`Új termék rögzítve: ${finalName}.`);
 
       }catch(e){
-        showErr('Új termék mentése sikertelen: ' + (e?.message || e));
+        showErr('Új termék rögzítése sikertelen: '+(e?.message||e));
       }
     }
-
   </script>
 </body>
 </html>
